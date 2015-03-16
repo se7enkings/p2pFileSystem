@@ -3,25 +3,36 @@ package main
 import (
 	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
-	"github.com/CRVV/p2pFileSystem/gui"
 	"os"
+	"runtime"
+    "github.com/CRVV/p2pFileSystem/gui"
+    "github.com/CRVV/p2pFileSystem/transfer"
 )
 
 func main() {
+	runtime.GOMAXPROCS(4)
+
 	fileSystem, err := filesystem.ReadLocalFile()
-	errorChecker(err)
+	checkError(err)
 
-	guiFileList, err := gui.GetFileList(fileSystem)
-	errorChecker(err)
+	fileList, err := filesystem.GetFileList(fileSystem)
+	checkError(err)
 
-    fmt.Println(guiFileList)
+	go gui.StartGuiServer(fileList)
 
-	go gui.StartGuiServer(guiFileList)
+    jsonFileListMessage, err := transfer.FileSystem2Json(fileSystem)
+    checkError(err)
+
+    fileSystem2, err := transfer.Json2FileSystem(jsonFileListMessage)
+    checkError(err)
+    os.Stdout.Write(jsonFileListMessage)
+    fmt.Println()
+    fmt.Println(fileSystem2)
 }
 
-func errorChecker(err error) {
+func checkError(err error) {
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("error: ", err)
 		os.Exit(1)
 	}
 }
