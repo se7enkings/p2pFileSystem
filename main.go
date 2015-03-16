@@ -5,29 +5,28 @@ import (
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"os"
 	"runtime"
-    "github.com/CRVV/p2pFileSystem/gui"
     "github.com/CRVV/p2pFileSystem/transfer"
+    "github.com/CRVV/p2pFileSystem/settings"
 )
 
 func main() {
 	runtime.GOMAXPROCS(4)
 
-	fileSystem, err := filesystem.ReadLocalFile()
+	fileSystem, err := filesystem.ReadLocalFile(settings.GetSharePath())
 	checkError(err)
 
-	fileList, err := filesystem.GetFileList(fileSystem)
+    _, err = filesystem.GetFileList(fileSystem)
 	checkError(err)
 
-	go gui.StartGuiServer(fileList)
-
-    jsonFileListMessage, err := transfer.FileSystem2Json(fileSystem)
+    remoteFileSystem, err := filesystem.ReadLocalFile("test/testRemoteFolder")
+    checkError(err)
+    jsonFileSystemMessage, err := transfer.FileSystem2Json(remoteFileSystem)
     checkError(err)
 
-    fileSystem2, err := transfer.Json2FileSystem(jsonFileListMessage)
+    remoteFileSystem, err = transfer.Json2FileSystem(jsonFileSystemMessage)
     checkError(err)
-    os.Stdout.Write(jsonFileListMessage)
-    fmt.Println()
-    fmt.Println(fileSystem2)
+    _, err = filesystem.GetFileList(remoteFileSystem)
+    checkError(err)
 }
 
 func checkError(err error) {

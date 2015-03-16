@@ -5,7 +5,7 @@ package settings
 const BlockSize = 4194304 // 4 M
 
 func GetSharePath() string {
-    return "test/testFolder"
+    return "test/testLocalFolder"
 }
 
 func IsIgnoredDir(name string) bool {
