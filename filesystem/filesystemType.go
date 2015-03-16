@@ -5,7 +5,7 @@ type File struct {
     Path string // path in P2P filesystem, "/movie"
 //    LocalPath string // path in OS filesystem, "C:/User" or "/home"
     Size int64 // bytes
-    FileHash [32]byte // SHA-256 Hash
+//    FileHash [32]byte // SHA-256 Hash
 //    BlockHash [][]byte // SHA-256 Hash
 //    Owner User
 //    Permission byte

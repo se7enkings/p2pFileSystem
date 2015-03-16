@@ -5,7 +5,7 @@ package settings
 const BlockSize = 4194304 // 4 M
 
 func GetSharePath() string {
-    return "D:/Audio/Music/Animation/星之声"
+    return "test/testFolder"
 }
 
 func IsIgnoredDir(name string) bool {
