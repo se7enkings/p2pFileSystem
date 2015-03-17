@@ -5,20 +5,24 @@ import (
     "net"
     "encoding/binary"
     "fmt"
-    "strings"
 )
 
 func NeighborSolicitation() {
-	message := []byte("CRVV's p2pFileSystem, written in go. " + settings.GetUserName())
-	SendNeighborSolicitationMessage("ndpp", message)
-}
-func SendNeighborSolicitationMessage(header string, message []byte) {
+    hello := "CRVV's p2pFileSystem, written in go."
+
+    // TODO: move this to settings
 	conn, err := net.Dial("udp", "255.255.255.255:1540")
 	checkError(err)
 	defer conn.Close()
 
 	conn.Write([]byte("ndpp"))
 	buff := make([]byte, 4)
+
+    addr, _, err := net.SplitHostPort(conn.LocalAddr().String())
+    checkError(err)
+    message, err := ClientMessage2Json(Client{hello, settings.GetUserName(), addr})
+    checkError(err)
+
 	binary.LittleEndian.PutUint32(buff, uint32(len(message)))
 	conn.Write(buff)
 	conn.Write(message)
@@ -37,14 +41,15 @@ func StartNeighborDiscoveryServer() {
 		conn.Read(buff)
 		connSize := binary.LittleEndian.Uint32(buff)
 
-		fmt.Println(connType)
 		buff = make([]byte, connSize)
 		conn.Read(buff)
-        message := strings.Split(string(buff), " ")
-        username := message[len(message)-1]
-        onReceiveNeighborSolicitation(username, conn.RemoteAddr())
+        if connType == "ndpp" {
+            client, err := Json2ClientMessage(buff)
+            checkError(err)
+            onReceiveNeighborSolicitation(client)
+        }
 	}
 }
-func onReceiveNeighborSolicitation(username string, addr net.Addr) {
-    fmt.Println(username, addr)
+func onReceiveNeighborSolicitation(client Client) {
+    fmt.Println(client)
 }
