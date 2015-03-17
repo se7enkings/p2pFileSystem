@@ -20,5 +20,3 @@ func GetUserName() string {
     return "crvv.pku@gmail.com"
 }
 
-const PortStart int = 1536
-const PortAmount int  = 20

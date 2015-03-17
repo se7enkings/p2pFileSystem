@@ -5,8 +5,8 @@ import (
 	"net"
 )
 
-func SendMessage(protocol string, header string, message []byte) {
-	conn, err := net.Dial(protocol, "localhost:1540")
+func SendMessage(header string, message []byte) {
+	conn, err := net.Dial("tcp", "192.168.10.138:1539")
 	checkError(err)
 
 	defer conn.Close()

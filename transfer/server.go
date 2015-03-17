@@ -46,24 +46,3 @@ func checkError(err error) {
 	}
 }
 
-func StartNeighborDiscoveryServer() {
-	conn, err := net.ListenUDP("udp", &net.UDPAddr{
-		IP:   net.IPv4zero,
-		Port: 1540})
-	checkError(err)
-	defer conn.Close()
-	for {
-		buff := make([]byte, 4)
-		conn.Read(buff)
-		connType := string(buff)
-
-		conn.Read(buff)
-		connSize := binary.LittleEndian.Uint32(buff)
-
-		fmt.Println(connType)
-		buff = make([]byte, connSize)
-		conn.Read(buff)
-        message := strings.Split(string(buff), " ")
-        fmt.Println(message[len(message)-1])
-	}
-}

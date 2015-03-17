@@ -27,10 +27,10 @@ func main() {
 	checkError(err)
 
 //    go transfer.StartFilesystemServer()
-    go transfer.StartNeighborDiscoveryServer()
-    go transfer.NeighborSolicitation()
-    c := make(chan int)
-    <- c
+//    go transfer.StartNeighborDiscoveryServer()
+    transfer.NeighborSolicitation()
+//    c := make(chan int)
+//    <- c
 
 //    ifaces, err := net.Interfaces()
 //    checkError(err)
