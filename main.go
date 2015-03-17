@@ -5,7 +5,6 @@ import (
 	"github.com/CRVV/p2pFileSystem/settings"
 	"github.com/CRVV/p2pFileSystem/transfer"
 	"runtime"
-    "time"
 )
 
 func main() {
@@ -28,11 +27,10 @@ func main() {
 	checkError(err)
 
 //    go transfer.StartFilesystemServer()
-    go transfer.StartNeighborDiscoveryServer()
-//    time.Sleep(time.Second)
-//    transfer.NeighborSolicitation()
-    c := make(chan int)
-    <- c
+//    go transfer.StartNeighborDiscoveryServer()
+    transfer.NeighborSolicitation()
+//    c := make(chan int)
+//    <- c
 
 //    ifaces, err := net.Interfaces()
 //    checkError(err)

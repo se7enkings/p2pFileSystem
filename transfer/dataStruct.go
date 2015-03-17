@@ -3,8 +3,6 @@ package transfer
 import (
 	"encoding/json"
 	"github.com/CRVV/p2pFileSystem/filesystem"
-    "fmt"
-    "os"
 )
 
 func FileSystem2Json(fileSystem filesystem.Filesystem) ([]byte, error) {
