@@ -3,7 +3,6 @@ package filesystem
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"fmt"
 	"github.com/CRVV/p2pFileSystem/local"
 	"io/ioutil"
 	"strings"
@@ -44,7 +43,7 @@ func GetFileList(fileSystem Filesystem) (Node, error) {
 		}
 		folder.Children[name] = Node{name, false, file.AtLocal, file.Size, fileHash, nil}
 	}
-	fmt.Println(fileList)
+//	fmt.Println(fileList)
 	return fileList, nil
 }
 func createFolder(rootFolder Node, folder string) Node {

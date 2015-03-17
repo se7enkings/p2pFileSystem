@@ -16,5 +16,9 @@ func IsIgnoredFile(name string) bool{
     return name == "Thumbs.db"
 }
 
+func GetUserName() string {
+    return "crvv.pku@gmail.com"
+}
+
 const PortStart int = 1536
 const PortAmount int  = 20

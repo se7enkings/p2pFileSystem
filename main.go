@@ -1,16 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"github.com/CRVV/p2pFileSystem/transfer"
-	"os"
 	"runtime"
 )
 
 func main() {
-	runtime.GOMAXPROCS(4)
+	runtime.GOMAXPROCS(8)
 
 	fileSystem, err := filesystem.ReadLocalFile(settings.GetSharePath())
 	checkError(err)
@@ -27,11 +25,16 @@ func main() {
 	checkError(err)
 	_, err = filesystem.GetFileList(remoteFileSystem)
 	checkError(err)
+
+    go transfer.StartFilesystemServer()
+    go transfer.NeighborSolicitation()
+
+    c := make(chan int)
+    <- c
 }
 
 func checkError(err error) {
 	if err != nil {
-		fmt.Println("error: ", err)
-		os.Exit(1)
+        panic(err)
 	}
 }
