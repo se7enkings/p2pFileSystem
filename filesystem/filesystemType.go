@@ -53,11 +53,11 @@ func (node Node) String() string {
 	return node2str(node, 0)
 }
 func node2str(node Node, space int) string {
-    const spaceString string = "    "
-    str := ""
-    str += strings.Repeat(spaceString, space) + fmt.Sprintf("%s, %s, %s, %d \n", node.Name, isDir(node.IsDir), atLocal(node.AtLocal), node.Size)
-    for _, file := range node.Children {
-        if file.IsDir {
+	const spaceString string = "    "
+	str := ""
+	str += strings.Repeat(spaceString, space) + fmt.Sprintf("%s, %s, %s, %d \n", node.Name, isDir(node.IsDir), atLocal(node.AtLocal), node.Size)
+	for _, file := range node.Children {
+		if file.IsDir {
 			str += node2str(file, space+1)
 		} else {
 			str += strings.Repeat(spaceString, space+1) + fmt.Sprintf("%s, %s, %s, %d \n", file.Name, isDir(file.IsDir), atLocal(file.AtLocal), file.Size)
@@ -67,16 +67,16 @@ func node2str(node Node, space int) string {
 
 }
 func isDir(is bool) string {
-    if is {
-        return "dir"
-    } else {
-        return "file"
-    }
+	if is {
+		return "dir"
+	} else {
+		return "file"
+	}
 }
 func atLocal(at bool) string {
-    if at {
-        return "local"
-    } else {
-        return "remote"
-    }
+	if at {
+		return "local"
+	} else {
+		return "remote"
+	}
 }

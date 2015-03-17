@@ -1,4 +1,5 @@
 package transfer
+
 import (
     "github.com/CRVV/p2pFileSystem/filesystem"
     "encoding/json"

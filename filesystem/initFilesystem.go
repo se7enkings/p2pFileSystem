@@ -36,7 +36,13 @@ var fileList Node = Node{"root", true, true, 0, "", make(map[string]Node)}
 func GetFileList(fileSystem Filesystem) (Node, error) {
 	for fileHash, file := range fileSystem {
 		folder := createFolder(fileList, file.Path)
-		folder.Children[file.Name] = Node{file.Name, false, file.AtLocal, file.Size, fileHash, nil}
+		_, ok := folder.Children[file.Name]
+		name := file.Name
+		if ok {
+			name += "-1"
+			//TODO: do better on duplicate filename. This will produce filename "xxx.txt-1"
+		}
+		folder.Children[name] = Node{name, false, file.AtLocal, file.Size, fileHash, nil}
 	}
 	fmt.Println(fileList)
 	return fileList, nil
