@@ -15,3 +15,6 @@ func IsIgnoredDir(name string) bool {
 func IsIgnoredFile(name string) bool{
     return name == "Thumbs.db"
 }
+
+const PortStart int = 1536
+const PortAmount int  = 20
