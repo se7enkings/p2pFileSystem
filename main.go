@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	runtime.GOMAXPROCS(8)
+	runtime.GOMAXPROCS(4)
 
 	fileSystem, err := filesystem.ReadLocalFile(settings.GetSharePath())
 	checkError(err)
@@ -26,11 +26,17 @@ func main() {
 	_, err = filesystem.GetFileList(remoteFileSystem)
 	checkError(err)
 
-    go transfer.StartFilesystemServer()
+//    go transfer.StartFilesystemServer()
+    go transfer.StartNeighborDiscoveryServer()
     go transfer.NeighborSolicitation()
-
     c := make(chan int)
     <- c
+
+//    ifaces, err := net.Interfaces()
+//    checkError(err)
+//    for _, iface := range ifaces {
+//        fmt.Println(iface.Addrs())
+//    }
 }
 
 func checkError(err error) {
