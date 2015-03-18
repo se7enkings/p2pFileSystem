@@ -1,15 +1,15 @@
 package local
 
 import (
-    "os"
-    "fmt"
+	"fmt"
+	"os"
 )
 
 type LocalFile struct {
-    Path string
-    FileInfo os.FileInfo
+	Path     string
+	FileInfo os.FileInfo
 }
 
-func (localFile LocalFile) String() string{
-    return fmt.Sprintf("%v, %v", localFile.Path, localFile.FileInfo.Name())
+func (localFile LocalFile) String() string {
+	return fmt.Sprintf("%v, %v", localFile.Path, localFile.FileInfo.Name())
 }

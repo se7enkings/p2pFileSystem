@@ -12,13 +12,13 @@ func ReadFiles(sharedPath string, currentPath string, outputChan chan LocalFile)
 	}
 	for _, v := range fileInfos {
 		if v.IsDir() {
-			if settings.IsIgnoredDir(v.Name()) {
+			if settings.GetSettings().IsIgnored(v.Name()) {
 				continue
 			}
-//			outputChan <- LocalFile{currentPath, v}
 			ReadFiles(sharedPath+"/"+v.Name(), currentPath+"/"+v.Name(), outputChan)
 		} else {
-			if !settings.IsIgnoredFile(v.Name()) {
+			if !settings.GetSettings().IsIgnored(v.Name()) {
+
 				outputChan <- LocalFile{currentPath, v}
 			}
 		}

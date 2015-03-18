@@ -17,11 +17,11 @@ func Json2FileSystem(jsonFileListMessage []byte) (filesystem.Filesystem, error) 
 }
 
 func ClientMessage2Json(client Client) ([]byte, error) {
-    b, err := json.Marshal(client)
-    return b, err
+	b, err := json.Marshal(client)
+	return b, err
 }
 func Json2ClientMessage(jsonClientMessage []byte) (Client, error) {
-    cm := Client{}
-    err := json.Unmarshal(jsonClientMessage, &cm)
-    return cm, err
+	cm := Client{}
+	err := json.Unmarshal(jsonClientMessage, &cm)
+	return cm, err
 }

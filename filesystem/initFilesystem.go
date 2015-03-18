@@ -8,13 +8,10 @@ import (
 	"strings"
 )
 
-//var RootDirectory Directory
-
 func ReadLocalFile(folder string) (Filesystem, error) {
 	fileSystem := make(Filesystem)
 	filesChan := make(chan local.LocalFile)
 
-	//    go local.ReadFiles(settings.GetSharePath(), "", filesChan)
 	go local.ReadFiles(folder, "", filesChan)
 
 	for f := range filesChan {
@@ -43,7 +40,6 @@ func GetFileList(fileSystem Filesystem) (Node, error) {
 		}
 		folder.Children[name] = Node{name, false, file.AtLocal, file.Size, fileHash, nil}
 	}
-//	fmt.Println(fileList)
 	return fileList, nil
 }
 func createFolder(rootFolder Node, folder string) Node {
