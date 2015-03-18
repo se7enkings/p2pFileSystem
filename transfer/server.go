@@ -10,6 +10,7 @@ import (
 )
 
 func StartFilesystemServer() {
+	fmt.Println("start tcp server")
 	listener, err := net.Listen("tcp", settings.CommunicationPort)
 	if err != nil {
 		panic(err)
@@ -47,5 +48,6 @@ func handleTcpConn(conn net.Conn) {
 }
 
 func onReceiveInvalidUsername() {
+	fmt.Println("receive invalid")
 	panic(errors.New("duplicate username"))
 }

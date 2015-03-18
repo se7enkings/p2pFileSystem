@@ -3,6 +3,7 @@ package transfer
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"net"
@@ -36,7 +37,8 @@ func SendNeighborSolicitation(targetAddr string) {
 	conn.Write(buff)
 	conn.Write(message)
 }
-func startNeighborDiscoveryServer() {
+func StartNeighborDiscoveryServer() {
+	fmt.Println("start nd server")
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{
 		IP:   net.IPv4zero,
 		Port: 1540})
@@ -49,6 +51,8 @@ func startNeighborDiscoveryServer() {
 		conn.Read(buff)
 		messageType := string(buff)
 
+		fmt.Println("receive ndp message")
+
 		conn.Read(buff)
 		connSize := binary.LittleEndian.Uint32(buff)
 
@@ -59,23 +63,28 @@ func startNeighborDiscoveryServer() {
 			if err != nil {
 				continue
 			}
+			fmt.Println(client)
 			onReceiveNeighborSolicitation(client)
 		}
 	}
 }
 func onReceiveNeighborSolicitation(client NDMessage) {
+	fmt.Println("receive")
 	if client.Group == settings.GetSettings().GetGroupName() && client.ID != filesystem.ID {
+		fmt.Println("same group, different id")
 		_, ok := filesystem.Clients[client.Username]
 		if ok {
+			fmt.Println("send invalid username")
 			SendMessage(client.Addr, settings.InvalidUsername, []byte(settings.InvalidUsername))
 		} else {
+			fmt.Println("send ndp to received client")
 			SendNeighborSolicitation(client.Addr)
 			filesystem.OnDiscoverClient(client.Username, client.Addr)
 		}
 	}
 }
 func InitNeighborDiscovery() {
-	go startNeighborDiscoveryServer()
+	go StartNeighborDiscoveryServer()
 	timer := time.Tick(time.Second * 5)
 	for {
 		SendNeighborSolicitation(settings.BroadcastAddress)
