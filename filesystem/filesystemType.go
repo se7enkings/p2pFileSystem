@@ -35,9 +35,9 @@ func Node2str(node *Node, space int, tree bool) string {
 	const spaceString string = "    "
 	str := ""
 	str += strings.Repeat(spaceString, space) + fmt.Sprintf("%s, %s, %s \n", node.Name, node.isDir(), node.atLocal())
-	for _, file := range node.Children {
+	for name, file := range node.Children {
 		switch {
-		case file.Name == "." || file.Name == "..":
+		case name == "." || name == "..":
 		case tree && file.IsDir:
 			str += Node2str(file, space+1, tree)
 		case file.IsDir:
