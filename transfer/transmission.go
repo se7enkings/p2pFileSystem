@@ -2,17 +2,30 @@ package transfer
 
 import (
 	"encoding/binary"
+	"errors"
+	"github.com/CRVV/p2pFileSystem/settings"
 	"net"
 )
 
-func SendMessage(header string, message []byte) {
-	conn, err := net.Dial("tcp", "192.168.10.138:1539")
-	checkError(err)
-
+func SendMessage(addr string, messageType string, message []byte) error {
+	conn, err := net.Dial("tcp", addr+settings.CommunicationPort)
+	if err != nil {
+		return err
+	}
 	defer conn.Close()
-	conn.Write([]byte("ndpp"))
-	buff := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buff, uint32(len(message)))
+	mType := []byte(messageType)
+	if len(mType) != settings.MessageHeaderSize {
+		return errors.New("invalid message type")
+	}
+	conn.Write(mType)
+
+	buff := make([]byte, settings.MessageHeaderSize)
+	size := uint32(len(message))
+	if size > settings.MaxMessageSize {
+		return errors.New("the message is too long")
+	}
+	binary.LittleEndian.PutUint32(buff, size)
 	conn.Write(buff)
 	conn.Write(message)
+	return nil
 }

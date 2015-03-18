@@ -13,7 +13,3 @@ func AppendFilesystem(originFileSystem Filesystem, receivedFileSystem Filesystem
 	}
 	return originFileSystem
 }
-
-func OnReceiveFilesystem() {
-
-}

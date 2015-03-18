@@ -2,46 +2,40 @@ package transfer
 
 import (
 	"encoding/binary"
-	"fmt"
+	"github.com/CRVV/p2pFileSystem/filesystem"
+	"github.com/CRVV/p2pFileSystem/settings"
 	"net"
-	"strings"
 )
 
 func StartFilesystemServer() {
-	// TODO: use const port in settings
-	//	addr, err := net.ResolveTCPAddr("tcp", ":1539")
-	//	checkError(err)
-	listener, err := net.Listen("tcp", ":1539")
-	checkError(err)
+	listener, err := net.Listen("tcp", settings.CommunicationPort)
+	if err != nil {
+		panic(err)
+	}
 	defer listener.Close()
 	for {
 		conn, err := listener.Accept()
-		checkError(err)
+		if err != nil {
+			continue
+		}
 		go handleTcpConn(conn)
 	}
 }
 
 // max size is 4GB
 func handleTcpConn(conn net.Conn) {
-	buff := make([]byte, 4)
-	conn.Read(buff)
-	connType := string(buff)
-
-	conn.Read(buff)
-	connSize := binary.LittleEndian.Uint32(buff)
-
-	switch connType {
-	case "ndpp":
-		fmt.Println(connType)
-		buff = make([]byte, connSize)
-		conn.Read(buff)
-		message := strings.Split(string(buff), " ")
-		fmt.Println(message[len(message)-1])
-	}
 	defer conn.Close()
-}
-func checkError(err error) {
-	if err != nil {
-		panic(err)
+	buff := make([]byte, settings.MessageHeaderSize)
+	conn.Read(buff)
+	messageType := string(buff)
+
+	conn.Read(buff)
+	size := binary.LittleEndian.Uint32(buff)
+
+	switch messageType {
+	case settings.FileSystemListProtocol:
+		buff = make([]byte, size)
+		conn.Read(buff)
+		filesystem.OnReceiveFilesystem(buff)
 	}
 }

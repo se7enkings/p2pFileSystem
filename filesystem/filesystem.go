@@ -3,19 +3,20 @@ package filesystem
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"github.com/CRVV/p2pFileSystem/local"
+	"github.com/CRVV/p2pFileSystem/settings"
 	"io/ioutil"
 	"strings"
 )
 
 var FileSystem Filesystem
+var FileSystemLocal Filesystem
 var FileList Node
 
 func ReadLocalFile(folder string) error {
 	fileSystem := make(Filesystem)
-	filesChan := make(chan local.LocalFile)
+	filesChan := make(chan LocalFile)
 
-	go local.ReadFiles(folder, "", filesChan)
+	go GetLocalFiles(folder, "", filesChan)
 
 	for f := range filesChan {
 		// TODO: ioutil.ReadFile cannot handle big file(use too much memory), fix it.
@@ -28,12 +29,12 @@ func ReadLocalFile(folder string) error {
 		fileSystem[hash] = File{f.FileInfo.Name(), f.Path, f.FileInfo.Size(), true}
 	}
 	FileSystem = fileSystem
+	FileSystemLocal = fileSystem
 	return nil
 }
 
 func GetFileList() error {
-	fileList := Node{"/", true, true, 0, "", make(map[string]*Node)}
-	fileList.Children["."] = &fileList
+	fileList := Node{"root", true, true, 0, "", make(map[string]*Node)}
 	fileList.Children[".."] = &fileList
 	for fileHash, file := range FileSystem {
 		folder := createFolder(&fileList, file.Path)
@@ -59,11 +60,24 @@ func doCreateFolder(rootFolder *Node, folders []string) *Node {
 	_, ok := rootFolder.Children[folders[0]]
 	if !ok && folders[0] != "" {
 		rootFolder.Children[folders[0]] = &Node{folders[0], true, true, 0, "", make(map[string]*Node)}
-		rootFolder.Children[folders[0]].Children["."] = rootFolder.Children[folders[0]]
 		rootFolder.Children[folders[0]].Children[".."] = rootFolder
 	}
 	if len(folders) > 1 {
 		return doCreateFolder(rootFolder.Children[folders[0]], folders[1:])
 	}
 	return rootFolder.Children[folders[0]]
+}
+func Init() {
+	err := ReadLocalFile(settings.GetSettings().GetSharePath())
+	checkError(err)
+	for _, c := range Clients {
+		FileSystem = AppendFilesystem(FileSystem, c.FileSystem)
+	}
+	err = GetFileList()
+	checkError(err)
+}
+func checkError(err error) {
+	if err != nil {
+		panic(err)
+	}
 }

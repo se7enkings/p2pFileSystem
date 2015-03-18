@@ -1,11 +1,12 @@
-package local
+package filesystem
 
 import (
 	"github.com/CRVV/p2pFileSystem/settings"
 	"io/ioutil"
+	"os"
 )
 
-func ReadFiles(sharedPath string, currentPath string, outputChan chan LocalFile) error {
+func GetLocalFiles(sharedPath string, currentPath string, outputChan chan LocalFile) error {
 	fileInfos, err := ioutil.ReadDir(sharedPath)
 	if err != nil {
 		return err
@@ -15,7 +16,7 @@ func ReadFiles(sharedPath string, currentPath string, outputChan chan LocalFile)
 			if settings.GetSettings().IsIgnored(v.Name()) {
 				continue
 			}
-			ReadFiles(sharedPath+"/"+v.Name(), currentPath+"/"+v.Name(), outputChan)
+			GetLocalFiles(sharedPath+"/"+v.Name(), currentPath+"/"+v.Name(), outputChan)
 		} else {
 			if !settings.GetSettings().IsIgnored(v.Name()) {
 
@@ -27,4 +28,9 @@ func ReadFiles(sharedPath string, currentPath string, outputChan chan LocalFile)
 		close(outputChan)
 	}
 	return nil
+}
+func RemoveLocalFile(fileHash string) {
+	file := FileSystem[fileHash]
+	name := settings.GetSettings().GetSharePath() + file.Path + "/" + file.Name
+	os.Remove(name)
 }

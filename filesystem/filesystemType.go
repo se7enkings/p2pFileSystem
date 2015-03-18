@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -13,7 +14,6 @@ type File struct {
 	//    LocalPath string // path in OS filesystem, "C:/User" or "/home"
 	Size    int64 // bytes
 	AtLocal bool  `json:"-"`
-	//    FileHash [32]byte // SHA-256 Hash
 	//    BlockHash [][]byte // SHA-256 Hash
 	//    Owner User
 	//    Permission byte
@@ -34,16 +34,16 @@ func (node Node) String() string {
 func Node2str(node *Node, space int, tree bool) string {
 	const spaceString string = "    "
 	str := ""
-	str += strings.Repeat(spaceString, space) + fmt.Sprintf("%s, %s, %s \n", node.Name, node.isDir(), node.atLocal())
+	str += strings.Repeat(spaceString, space) + fmt.Sprintf("%s, %s\n", node.Name, node.isDir())
 	for name, file := range node.Children {
 		switch {
-		case name == "." || name == "..":
+		case name == "..":
 		case tree && file.IsDir:
 			str += Node2str(file, space+1, tree)
 		case file.IsDir:
-			str += strings.Repeat(spaceString, space+1) + fmt.Sprintf("%s, %s, %s \n", file.Name, file.isDir(), file.atLocal())
+			str += strings.Repeat(spaceString, space+1) + fmt.Sprintf("%s, %s\n", file.Name, file.isDir())
 		default:
-			str += strings.Repeat(spaceString, space+1) + fmt.Sprintf("%s, %s, %s, %d bytes \n", file.Name, file.isDir(), file.atLocal(), file.Size)
+			str += strings.Repeat(spaceString, space+1) + fmt.Sprintf("%s, %s, %s, %d bytes\n", file.Name, file.isDir(), file.atLocal(), file.Size)
 		}
 	}
 	return str
@@ -61,4 +61,13 @@ func (node *Node) atLocal() string {
 	} else {
 		return "remote"
 	}
+}
+
+type LocalFile struct {
+	Path     string
+	FileInfo os.FileInfo
+}
+
+func (localFile LocalFile) String() string {
+	return fmt.Sprintf("%v, %v", localFile.Path, localFile.FileInfo.Name())
 }

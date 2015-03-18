@@ -6,8 +6,6 @@ import (
 	"sync"
 )
 
-const BlockSize = 4194304 // 4 M
-
 var settings Settings
 var mutex sync.Mutex = sync.Mutex{}
 
