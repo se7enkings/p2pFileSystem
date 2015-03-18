@@ -73,7 +73,7 @@ func onReceiveNeighborSolicitation(client NDMessage) {
 	if client.Group == settings.GetSettings().GetGroupName() && client.ID != filesystem.ID {
 		fmt.Println("same group, different id")
 		_, ok := filesystem.Clients[client.Username]
-		if ok {
+		if ok || client.Username == settings.GetSettings().GetUsername() {
 			fmt.Println("send invalid username")
 			SendMessage(client.Addr, settings.InvalidUsername, []byte(settings.InvalidUsername))
 		} else {

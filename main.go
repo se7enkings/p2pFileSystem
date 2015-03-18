@@ -13,5 +13,6 @@ func main() {
 	//	go transfer.InitNeighborDiscovery()
 	go transfer.StartNeighborDiscoveryServer()
 	go transfer.StartFilesystemServer()
+	//	transfer.SendNeighborSolicitation("255.255.255.255")
 	ui.StartCLI()
 }
