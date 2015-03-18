@@ -23,7 +23,12 @@ func SendNeighborSolicitation(targetAddr string) {
 	if err != nil {
 		return
 	}
-	message, err := ClientMessage2Json(NDMessage{settings.HelloMessage, settings.GetSettings().GetUsername(), settings.GetSettings().GetGroupName(), addr})
+	message, err := ClientMessage2Json(NDMessage{
+		Hello:    settings.HelloMessage,
+		Username: settings.GetSettings().GetUsername(),
+		ID:       filesystem.ID,
+		Group:    settings.GetSettings().GetGroupName(),
+		Addr:     addr})
 	if err != nil {
 		return
 	}
