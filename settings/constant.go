@@ -10,5 +10,6 @@ const NeighborDiscoveryPort = ":1540"
 
 const FileSystemListProtocol = "fslp"
 const NeighborDiscoveryProtocol = "ndpl"
+const InvalidUsername = "iune"
 
 const HelloMessage = "hello"

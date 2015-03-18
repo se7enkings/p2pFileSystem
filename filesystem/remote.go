@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 )
 
-var Clients []Client
+var Clients map[string]Client
 
 type Client struct {
 	Addr       string

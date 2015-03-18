@@ -6,13 +6,11 @@ import (
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"net"
-    "time"
-    "fmt"
+	"time"
 )
 
 func SendNeighborSolicitation(targetAddr string) {
-    fmt.Println("send")
-	conn, err := net.Dial("udp", settings.BroadcastAddress+targetAddr)
+	conn, err := net.Dial("udp", targetAddr+settings.NeighborDiscoveryPort)
 	if err != nil {
 		return
 	}
@@ -61,19 +59,23 @@ func startNeighborDiscoveryServer() {
 	}
 }
 func onReceiveNeighborSolicitation(client NDMessage) {
-    fmt.Println("receive")
 	if client.Group == settings.GetSettings().GetGroupName() {
-		SendNeighborSolicitation(client.Addr)
-		filesystem.OnDiscoverClient(client.Username, client.Addr)
+        _, ok := filesystem.Clients[client.Username]
+        if ok {
+            SendMessage(client.Addr, settings.InvalidUsername, []byte(settings.InvalidUsername))
+        } else {
+            SendNeighborSolicitation(client.Addr)
+            filesystem.OnDiscoverClient(client.Username, client.Addr)
+        }
 	}
 }
 func InitNeighborDiscovery() {
 	go startNeighborDiscoveryServer()
-    timer := time.Tick(time.Second * 5)
-    for {
-        <- timer
-        SendNeighborSolicitation(settings.BroadcastAddress)
-    }
+	timer := time.Tick(time.Second * 5)
+	for {
+		<-timer
+		SendNeighborSolicitation(settings.BroadcastAddress)
+	}
 }
 
 type NDMessage struct {

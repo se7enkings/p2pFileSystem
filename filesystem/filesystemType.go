@@ -16,7 +16,7 @@ type File struct {
 	AtLocal bool  `json:"-"`
 	//    BlockHash [][]byte // SHA-256 Hash
 	//    Owner User
-	//    Permission byte
+	//	    Permission byte
 }
 
 type Node struct {

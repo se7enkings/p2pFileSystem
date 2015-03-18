@@ -5,6 +5,7 @@ import (
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"net"
+    "errors"
 )
 
 func StartFilesystemServer() {
@@ -32,10 +33,17 @@ func handleTcpConn(conn net.Conn) {
 	conn.Read(buff)
 	size := binary.LittleEndian.Uint32(buff)
 
+    buff = make([]byte, size)
+    conn.Read(buff)
+
 	switch messageType {
 	case settings.FileSystemListProtocol:
-		buff = make([]byte, size)
-		conn.Read(buff)
 		filesystem.OnReceiveFilesystem(buff)
+    case settings.InvalidUsername:
+        onReceiveInvalidUsername()
 	}
+}
+
+func onReceiveInvalidUsername() {
+    panic(errors.New("duplicate username"))
 }
