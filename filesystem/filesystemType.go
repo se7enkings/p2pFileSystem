@@ -19,34 +19,13 @@ type File struct {
 	//    Permission byte
 }
 
-//type Directory struct {
-//    Name string // directory name, exclude path
-//    Files []*File // files contained in this directory
-//    SubDirectories []*Directory // directories contained in this directory
-//    Owner User
-//    Permission byte
-//}
-
-//type FileSystemNode interface {
-//
-//}
-
-//type User struct {
-//    Name string
-//}
-//
-//type Group struct {
-//    Name string
-//    Member []User
-//}
-
 type Node struct {
 	Name     string
 	IsDir    bool
 	AtLocal  bool
 	Size     int64
 	FileHash string
-	Children map[string]Node
+	Children map[string]*Node
 }
 
 func (node Node) String() string {
@@ -55,12 +34,16 @@ func (node Node) String() string {
 func Node2str(node *Node, space int, tree bool) string {
 	const spaceString string = "    "
 	str := ""
-	str += strings.Repeat(spaceString, space) + fmt.Sprintf("%s, %s, %s, %d \n", node.Name, node.isDir(), node.atLocal(), node.Size)
+	str += strings.Repeat(spaceString, space) + fmt.Sprintf("%s, %s, %s \n", node.Name, node.isDir(), node.atLocal())
 	for _, file := range node.Children {
-		if file.IsDir && tree {
-			str += Node2str(&file, space+1, tree)
-		} else {
-			str += strings.Repeat(spaceString, space+1) + fmt.Sprintf("%s, %s, %s, %d \n", file.Name, file.isDir(), file.atLocal(), file.Size)
+		switch {
+		case file.Name == "." || file.Name == "..":
+		case tree && file.IsDir:
+			str += Node2str(file, space+1, tree)
+		case file.IsDir:
+			str += strings.Repeat(spaceString, space+1) + fmt.Sprintf("%s, %s, %s \n", file.Name, file.isDir(), file.atLocal())
+		default:
+			str += strings.Repeat(spaceString, space+1) + fmt.Sprintf("%s, %s, %s, %d bytes \n", file.Name, file.isDir(), file.atLocal(), file.Size)
 		}
 	}
 	return str

@@ -7,7 +7,7 @@ import (
 )
 
 func StartCLI() {
-	current := filesystem.FileList
+	current := &filesystem.FileList
 	command := ""
 
 Loop:
@@ -17,11 +17,21 @@ Loop:
 		fmt.Scan(&command)
 		switch command {
 		case "ls":
-			fmt.Println(filesystem.Node2str(&current, 0, false))
+			fmt.Println(filesystem.Node2str(current, 0, false))
 		case "lstree":
 			fmt.Println(filesystem.FileList)
 		case "cd":
-
+			name := ""
+			fmt.Scan(&name)
+			newDir, ok := current.Children[name]
+			switch {
+			case ok && newDir.IsDir:
+				current = newDir
+			case ok && !newDir.IsDir:
+				fmt.Printf("not a directory: %s\n", name)
+			default:
+				fmt.Printf("no such file or directory: %s\n", name)
+			}
 		case "get":
 			filename := ""
 			fmt.Scan(&filename)
