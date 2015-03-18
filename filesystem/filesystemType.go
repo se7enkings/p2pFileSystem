@@ -50,31 +50,30 @@ type Node struct {
 }
 
 func (node Node) String() string {
-	return node2str(node, 0)
+	return Node2str(&node, 0, true)
 }
-func node2str(node Node, space int) string {
+func Node2str(node *Node, space int, tree bool) string {
 	const spaceString string = "    "
 	str := ""
-	str += strings.Repeat(spaceString, space) + fmt.Sprintf("%s, %s, %s, %d \n", node.Name, isDir(node.IsDir), atLocal(node.AtLocal), node.Size)
+	str += strings.Repeat(spaceString, space) + fmt.Sprintf("%s, %s, %s, %d \n", node.Name, node.isDir(), node.atLocal(), node.Size)
 	for _, file := range node.Children {
-		if file.IsDir {
-			str += node2str(file, space+1)
+		if file.IsDir && tree {
+			str += Node2str(&file, space+1, tree)
 		} else {
-			str += strings.Repeat(spaceString, space+1) + fmt.Sprintf("%s, %s, %s, %d \n", file.Name, isDir(file.IsDir), atLocal(file.AtLocal), file.Size)
+			str += strings.Repeat(spaceString, space+1) + fmt.Sprintf("%s, %s, %s, %d \n", file.Name, file.isDir(), file.atLocal(), file.Size)
 		}
 	}
 	return str
-
 }
-func isDir(is bool) string {
-	if is {
+func (node *Node) isDir() string {
+	if node.IsDir {
 		return "dir"
 	} else {
 		return "file"
 	}
 }
-func atLocal(at bool) string {
-	if at {
+func (node *Node) atLocal() string {
+	if node.AtLocal {
 		return "local"
 	} else {
 		return "remote"

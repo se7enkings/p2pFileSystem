@@ -8,7 +8,10 @@ import (
 	"strings"
 )
 
-func ReadLocalFile(folder string) (Filesystem, error) {
+var FileSystem Filesystem
+var FileList Node
+
+func ReadLocalFile(folder string) error {
 	fileSystem := make(Filesystem)
 	filesChan := make(chan local.LocalFile)
 
@@ -18,19 +21,20 @@ func ReadLocalFile(folder string) (Filesystem, error) {
 		// TODO: ioutil.ReadFile cannot handle big file(use too much memory), fix it.
 		fileData, err := ioutil.ReadFile(folder + "/" + f.Path + "/" + f.FileInfo.Name())
 		if err != nil {
-			return nil, err
+			return err
 		}
 		sha256Sum := sha256.Sum256(fileData)
 		hash := base64.StdEncoding.EncodeToString(sha256Sum[:])
 		fileSystem[hash] = File{f.FileInfo.Name(), f.Path, f.FileInfo.Size(), true}
 	}
-	return fileSystem, nil
+	FileSystem = fileSystem
+	return nil
 }
 
-var fileList Node = Node{"root", true, true, 0, "", make(map[string]Node)}
+var fileList Node = Node{"/", true, true, 0, "", make(map[string]Node)}
 
-func GetFileList(fileSystem Filesystem) (Node, error) {
-	for fileHash, file := range fileSystem {
+func GetFileList() error {
+	for fileHash, file := range FileSystem {
 		folder := createFolder(fileList, file.Path)
 		_, ok := folder.Children[file.Name]
 		name := file.Name
@@ -40,7 +44,8 @@ func GetFileList(fileSystem Filesystem) (Node, error) {
 		}
 		folder.Children[name] = Node{name, false, file.AtLocal, file.Size, fileHash, nil}
 	}
-	return fileList, nil
+	FileList = fileList
+	return nil
 }
 func createFolder(rootFolder Node, folder string) Node {
 	folders := strings.Split(folder, "/")

@@ -1,22 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/settings"
+	"github.com/CRVV/p2pFileSystem/ui"
 	"runtime"
 )
 
 func main() {
 	runtime.GOMAXPROCS(4)
 
-	fileSystem, err := filesystem.ReadLocalFile(settings.GetSettings().GetSharePath())
+	err := filesystem.ReadLocalFile(settings.GetSettings().GetSharePath())
 	checkError(err)
 
-	fileList, err := filesystem.GetFileList(fileSystem)
+	err = filesystem.GetFileList()
 	checkError(err)
 
-	fmt.Println(fileList)
+	ui.StartCLI()
 
 	//	remoteFileSystem, err := filesystem.ReadLocalFile("test/testRemoteFolder")
 	//	checkError(err)

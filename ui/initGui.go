@@ -1,4 +1,4 @@
-package gui
+package ui
 
 import "github.com/CRVV/p2pFileSystem/filesystem"
 

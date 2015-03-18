@@ -13,6 +13,7 @@ var mutex sync.Mutex = sync.Mutex{}
 
 type Settings struct {
 	Username  string
+	GroupName string
 	SharePath string
 	Ignore    map[string]int
 }
@@ -22,7 +23,7 @@ func GetSettings() *Settings {
 	if settings.Username == "" {
 		configFile, err := ioutil.ReadFile("config.json")
 		if err != nil {
-			settings = Settings{"crvv.pku@gmail.com", "test/testLocalFolder", make(map[string]int)}
+			settings = Settings{"crvv", "Group", "test/testLocalFolder", make(map[string]int)}
 			settings.SaveSettings()
 		} else {
 			settings = Settings{}
@@ -73,6 +74,14 @@ func (s *Settings) GetUsername() string {
 func (s *Settings) SetUsername(name string) {
 	s.Username = name
 	s.SaveSettings()
+}
+func (s *Settings) GetGroupName() string {
+	return s.GroupName
+}
+func (s *Settings) SetGroupName(name string) {
+	s.GroupName = name
+	s.SaveSettings()
+	// TODO: changing group need to reconnect
 }
 
 func checkError(err error) {
