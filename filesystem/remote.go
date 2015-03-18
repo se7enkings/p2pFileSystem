@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 )
 
+var ID string
 var Clients map[string]Client
 
 type Client struct {

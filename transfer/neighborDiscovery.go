@@ -59,28 +59,29 @@ func startNeighborDiscoveryServer() {
 	}
 }
 func onReceiveNeighborSolicitation(client NDMessage) {
-	if client.Group == settings.GetSettings().GetGroupName() {
-        _, ok := filesystem.Clients[client.Username]
-        if ok {
-            SendMessage(client.Addr, settings.InvalidUsername, []byte(settings.InvalidUsername))
-        } else {
-            SendNeighborSolicitation(client.Addr)
-            filesystem.OnDiscoverClient(client.Username, client.Addr)
-        }
+	if client.Group == settings.GetSettings().GetGroupName() && client.ID != filesystem.ID {
+		_, ok := filesystem.Clients[client.Username]
+		if ok {
+			SendMessage(client.Addr, settings.InvalidUsername, []byte(settings.InvalidUsername))
+		} else {
+			SendNeighborSolicitation(client.Addr)
+			filesystem.OnDiscoverClient(client.Username, client.Addr)
+		}
 	}
 }
 func InitNeighborDiscovery() {
 	go startNeighborDiscoveryServer()
 	timer := time.Tick(time.Second * 5)
 	for {
-		<-timer
 		SendNeighborSolicitation(settings.BroadcastAddress)
+		<-timer
 	}
 }
 
 type NDMessage struct {
 	Hello    string
 	Username string
+	ID       string
 	Group    string
 	Addr     string
 }

@@ -22,7 +22,7 @@ Loop:
 		if path == "" {
 			path = "/"
 		}
-		fmt.Printf("%s@%s %s -->", settingValue.GetUsername(), settingValue.GetGroupName(), path)
+		fmt.Printf("%s@%s %s --> ", settingValue.GetUsername(), settingValue.GetGroupName(), path)
 		fmt.Scan(&command)
 		switch command {
 		case "ls":

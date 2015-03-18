@@ -5,7 +5,9 @@ import (
 	"encoding/base64"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"io/ioutil"
+	"math/rand"
 	"strings"
+	"time"
 )
 
 var FileSystem Filesystem
@@ -75,6 +77,13 @@ func Init() {
 	}
 	err = GetFileList()
 	checkError(err)
+
+	rand.Seed(time.Now().UnixNano())
+	id := make([]byte, 16)
+	for i, _ := range id {
+		id[i] = byte(rand.Intn(256))
+	}
+	ID = base64.StdEncoding.EncodeToString(id)
 }
 func checkError(err error) {
 	if err != nil {

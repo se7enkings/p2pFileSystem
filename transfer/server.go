@@ -2,10 +2,11 @@ package transfer
 
 import (
 	"encoding/binary"
+	"errors"
+	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"net"
-    "errors"
 )
 
 func StartFilesystemServer() {
@@ -25,6 +26,7 @@ func StartFilesystemServer() {
 
 // max size is 4GB
 func handleTcpConn(conn net.Conn) {
+	fmt.Println("handle tcp")
 	defer conn.Close()
 	buff := make([]byte, settings.MessageHeaderSize)
 	conn.Read(buff)
@@ -33,17 +35,17 @@ func handleTcpConn(conn net.Conn) {
 	conn.Read(buff)
 	size := binary.LittleEndian.Uint32(buff)
 
-    buff = make([]byte, size)
-    conn.Read(buff)
+	buff = make([]byte, size)
+	conn.Read(buff)
 
 	switch messageType {
 	case settings.FileSystemListProtocol:
 		filesystem.OnReceiveFilesystem(buff)
-    case settings.InvalidUsername:
-        onReceiveInvalidUsername()
+	case settings.InvalidUsername:
+		onReceiveInvalidUsername()
 	}
 }
 
 func onReceiveInvalidUsername() {
-    panic(errors.New("duplicate username"))
+	panic(errors.New("duplicate username"))
 }
