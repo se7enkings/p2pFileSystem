@@ -10,9 +10,7 @@ import (
 func main() {
 	runtime.GOMAXPROCS(4)
 	filesystem.Init()
-	//	go transfer.InitNeighborDiscovery()
-	go transfer.StartNeighborDiscoveryServer()
+	go transfer.InitNeighborDiscovery()
 	go transfer.StartFilesystemServer()
-	//	transfer.SendNeighborSolicitation("255.255.255.255")
 	ui.StartCLI()
 }

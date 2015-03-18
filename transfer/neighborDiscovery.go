@@ -8,6 +8,7 @@ import (
 	"github.com/CRVV/p2pFileSystem/settings"
 	"net"
 	"time"
+    "os"
 )
 
 func SendNeighborSolicitation(targetAddr string) {
@@ -47,19 +48,18 @@ func StartNeighborDiscoveryServer() {
 	}
 	defer conn.Close()
 	for {
-		buff := make([]byte, settings.MessageHeaderSize)
-		conn.Read(buff)
-		messageType := string(buff)
-
-		fmt.Println("receive ndp message")
-
-		conn.Read(buff)
-		connSize := binary.LittleEndian.Uint32(buff)
-
-		buff = make([]byte, connSize)
-		conn.Read(buff)
+		buff := make([]byte, settings.NeighborDiscoveryMessageBufferSize)
+        _, _, err := conn.ReadFromUDP(buff)
+        if err != nil {
+            continue
+        }
+        os.Stdout.Write(buff)
+        headerSize := settings.MessageHeaderSize
+		messageType := string(buff[0:headerSize])
+        fmt.Printf("\n\n%s\n", messageType)
+//		size := binary.LittleEndian.Uint32(buff[headerSize:headerSize*2])
 		if messageType == settings.NeighborDiscoveryProtocol {
-			client, err := Json2ClientMessage(buff)
+			client, err := Json2ClientMessage(buff[headerSize*2:])
 			if err != nil {
 				continue
 			}
