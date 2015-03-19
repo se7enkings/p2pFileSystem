@@ -5,15 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
+	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"net"
 )
 
 func StartFilesystemServer() {
-	fmt.Println("start tcp server")
+	logger.Info("start filesystem server")
 	listener, err := net.Listen("tcp", settings.CommunicationPort)
 	if err != nil {
-		panic(err)
+		logger.Error(err)
 	}
 	defer listener.Close()
 	for {
@@ -27,7 +28,7 @@ func StartFilesystemServer() {
 
 // max size is 4GB
 func handleTcpConn(conn net.Conn) {
-	fmt.Println("handle tcp")
+	logger.Info("handle a tcp connection from " + conn.RemoteAddr().String())
 	defer conn.Close()
 	buff := make([]byte, settings.MessageHeaderSize)
 	conn.Read(buff)
@@ -41,13 +42,14 @@ func handleTcpConn(conn net.Conn) {
 
 	switch messageType {
 	case settings.FileSystemListProtocol:
+		logger.Info("receive a fileSystemList message from " + conn.RemoteAddr().String())
 		filesystem.OnReceiveFilesystem(buff)
 	case settings.InvalidUsername:
+		logger.Info("receive a invalidUsername message from " + conn.RemoteAddr().String())
 		onReceiveInvalidUsername()
 	}
 }
 
 func onReceiveInvalidUsername() {
-	fmt.Println("receive invalid")
-	panic(errors.New("duplicate username"))
+	logger.Error(errors.New("duplicate username"))
 }
