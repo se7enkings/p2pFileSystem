@@ -108,6 +108,7 @@ func onReceiveNeighborSolicitation(client NDMessage) {
 					return
 				}
 				logger.Info("receive neighbor solicitation message from an unknown client, request its file list")
+                clients[client.Username] = client
 				messagePipe <- Message{Type: settings.FileSystemRequestProtocol, Destination: client.Addr, Load: message}
 			}
 			cMutex.Unlock()

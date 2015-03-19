@@ -32,6 +32,7 @@ func OnReceiveFilesystem(filesystemMessage []byte) {
 	FsMutex.Lock()
 	FileSystem = AppendFilesystem(FileSystem, client.FileSystem)
 	FsMutex.Unlock()
+    GetFileList()
 }
 func OnRequestedFilesystem(name string) {
 	FslMutex.Lock()
