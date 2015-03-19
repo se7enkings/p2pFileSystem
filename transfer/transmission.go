@@ -13,7 +13,8 @@ var messagePipe chan Message = make(chan Message, 4)
 func sendMessage(addr string, messageType string, message []byte) {
 	conn, err := net.Dial("tcp", addr+settings.CommunicationPort)
 	if err != nil {
-		return err
+		logger.Warning(err)
+		return
 	}
 	defer conn.Close()
 	mType := []byte(messageType)
