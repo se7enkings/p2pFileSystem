@@ -1,40 +1,46 @@
 package transfer
 
 import (
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
+	"math/rand"
 	"net"
+	"sync"
+	"time"
 )
 
-func SendNeighborSolicitation(targetAddr string) {
+var id string
+
+var clients map[string]NDMessage // key: Username
+var cMutex sync.Mutex = sync.Mutex{}
+
+func sendNeighborSolicitation(messageType string, targetAddr string) {
 	udpAddr, err := net.ResolveUDPAddr("udp", targetAddr+settings.NeighborDiscoveryPort)
 	if err != nil {
 		logger.Warning(err)
 		return
 	}
-
 	conn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
 		logger.Warning(err)
 		return
 	}
 	defer conn.Close()
-
 	var buff []byte
-	buff = append(buff, []byte(settings.NeighborDiscoveryProtocol)...)
+	buff = append(buff, []byte(messageType)...)
 
 	addr, _, err := net.SplitHostPort(conn.LocalAddr().String())
 	if err != nil {
 		logger.Warning(err)
 		return
 	}
-	message, err := ClientMessage2Json(NDMessage{
-		Hello:    settings.HelloMessage,
+	message, err := Message2Json(NDMessage{
 		Username: settings.GetSettings().GetUsername(),
-		ID:       filesystem.ID,
+		ID:       id,
 		Group:    settings.GetSettings().GetGroupName(),
 		Addr:     addr})
 	if err != nil {
@@ -67,49 +73,96 @@ func StartNeighborDiscoveryServer() {
 		}
 		headerSize := settings.MessageHeaderSize
 		messageType := string(buff[0:headerSize])
-		if messageType == settings.NeighborDiscoveryProtocol {
-			size := binary.LittleEndian.Uint32(buff[headerSize : headerSize*2])
-			client, err := Json2ClientMessage(buff[headerSize*2 : headerSize*2+int(size)])
-			if err != nil {
-				logger.Warning(err)
-				continue
-			}
+		size := binary.LittleEndian.Uint32(buff[headerSize : headerSize*2])
+		client, err := Json2ClientMessage(buff[headerSize*2 : headerSize*2+int(size)])
+		if err != nil {
+			logger.Warning(err)
+			continue
+		}
+		switch messageType {
+		case settings.NeighborDiscoveryProtocol:
 			logger.Info("receive ndp message from " + client.Addr)
 			onReceiveNeighborSolicitation(client)
+		case settings.NeighborDiscoveryProtocolEcho:
+			logger.Info("receive ndp echo message from " + client.Addr)
+			onReceiveNeighborSolicitationEcho(client)
 		}
 	}
 }
 func onReceiveNeighborSolicitation(client NDMessage) {
-	if client.Group == settings.GetSettings().GetGroupName() && client.ID != filesystem.ID {
-		_, ok := filesystem.Clients[client.Username]
+	if client.Group == settings.GetSettings().GetGroupName() && client.ID != id {
+		cMutex.Lock()
+		_, ok := clients[client.Username]
+		cMutex.Unlock()
 		switch {
 		case client.Username == settings.GetSettings().GetUsername():
-			SendMessage(client.Addr, settings.InvalidUsername, []byte(settings.InvalidUsername))
+			logger.Info("found a client which have the same username. kick it out!")
+			messagePipe <- Message{Type: settings.InvalidUsername, Load: []byte(settings.InvalidUsername), Destination: client.Addr}
 		case ok:
+			logger.Info("found a known client")
+			sendNeighborSolicitation(settings.NeighborDiscoveryProtocolEcho, client.Addr)
 		default:
-			filesystem.OnDiscoverClient(client.Username, client.Addr)
+			logger.Info("found an unknown client " + client.Username + " from " + client.Addr)
+			sendNeighborSolicitation(settings.NeighborDiscoveryProtocolEcho, client.Addr)
 		}
 	}
 }
+func onReceiveNeighborSolicitationEcho(client NDMessage) {
+	cMutex.Lock()
+	clients[client.Username] = client
+	cMutex.Unlock()
+}
 func InitNeighborDiscovery() {
-	go StartNeighborDiscoveryServer()
-	SendNeighborSolicitation(settings.BroadcastAddress)
+	genID()
+	StartNeighborDiscoveryServer()
+}
+func NeighborDiscovery() {
+	for {
+		DoNeighborDiscovery()
+		time.Sleep(time.Minute)
+	}
+}
+func DoNeighborDiscovery() {
+	clients = make(map[string]NDMessage)
+	for i := 0; i < 3; i++ {
+		sendNeighborSolicitation(settings.NeighborDiscoveryProtocol, settings.BroadcastAddress)
+		time.Sleep(time.Second * 2)
+	}
+	for name, _ := range filesystem.Clients {
+		_, ok := clients[name]
+		if !ok {
+			filesystem.OnClientMissing(name)
+		}
+	}
+	for name, c := range clients {
+		_, ok := filesystem.Clients[name]
+		if !ok {
+			messagePipe <- Message{Type: settings.FileSystemRequestProtocol, Destination: c.Addr, Load: []byte(settings.GetSettings().GetUsername())}
+		}
+	}
 }
 
 type NDMessage struct {
-	Hello    string
 	Username string
+	Addr     string
 	ID       string
 	Group    string
-	Addr     string
 }
 
-func ClientMessage2Json(client NDMessage) ([]byte, error) {
-	b, err := json.Marshal(client)
+func Message2Json(message interface{}) ([]byte, error) {
+	b, err := json.Marshal(message)
 	return b, err
 }
 func Json2ClientMessage(jsonClientMessage []byte) (NDMessage, error) {
 	cm := NDMessage{}
 	err := json.Unmarshal(jsonClientMessage, &cm)
 	return cm, err
+}
+func genID() {
+	rand.Seed(time.Now().UnixNano())
+	idd := make([]byte, 16)
+	for i, _ := range idd {
+		idd[i] = byte(rand.Intn(256))
+	}
+	id = base64.StdEncoding.EncodeToString(idd)
 }

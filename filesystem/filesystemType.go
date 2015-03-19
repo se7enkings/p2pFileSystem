@@ -71,3 +71,9 @@ type LocalFile struct {
 func (localFile LocalFile) String() string {
 	return fmt.Sprintf("%v, %v", localFile.Path, localFile.FileInfo.Name())
 }
+
+type Message struct {
+	Type                string
+	Load                []byte
+	DestinationUsername string
+}

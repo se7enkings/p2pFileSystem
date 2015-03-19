@@ -6,17 +6,12 @@ import (
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"io/ioutil"
-	"math/rand"
 	"strings"
 	"sync"
-	"time"
 )
 
 var FileSystem Filesystem
-var fsMutex sync.Mutex = sync.Mutex{}
-
-var FileSystemLocal Filesystem
-var fslMutex sync.Mutex = sync.Mutex{}
+var FsMutex sync.Mutex = sync.Mutex{}
 
 var FileList Node
 var FlMutex sync.Mutex = sync.Mutex{}
@@ -37,19 +32,19 @@ func ReadLocalFile(folder string) error {
 		hash := base64.StdEncoding.EncodeToString(sha256Sum[:])
 		fileSystem[hash] = File{f.FileInfo.Name(), f.Path, f.FileInfo.Size(), true}
 	}
-	fsMutex.Lock()
+	FsMutex.Lock()
 	FileSystem = fileSystem
-	fsMutex.Unlock()
-	fslMutex.Lock()
+	FsMutex.Unlock()
+	FslMutex.Lock()
 	FileSystemLocal = fileSystem
-	fslMutex.Unlock()
+	FslMutex.Unlock()
 	return nil
 }
 
 func GetFileList() error {
 	fileList := Node{"root", true, true, 0, "", make(map[string]*Node)}
 	fileList.Children[".."] = &fileList
-	fsMutex.Lock()
+	FsMutex.Lock()
 	for fileHash, file := range FileSystem {
 		folder := createFolder(&fileList, file.Path)
 		_, ok := folder.Children[file.Name]
@@ -60,7 +55,7 @@ func GetFileList() error {
 		}
 		folder.Children[name] = &Node{name, false, file.AtLocal, file.Size, fileHash, nil}
 	}
-	fsMutex.Unlock()
+	FsMutex.Unlock()
 	FlMutex.Lock()
 	FileList = fileList
 	FlMutex.Unlock()
@@ -87,25 +82,16 @@ func doCreateFolder(rootFolder *Node, folders []string) *Node {
 func Init() {
 	err := ReadLocalFile(settings.GetSettings().GetSharePath())
 	logger.Error(err)
-	for _, c := range Clients {
-		fsMutex.Lock()
-		FileSystem = AppendFilesystem(FileSystem, c.FileSystem)
-		fsMutex.Unlock()
-	}
-	err = GetFileList()
-	logger.Error(err)
-	genID()
+	CMutex.Lock()
 	if Clients == nil {
 		Clients = make(map[string]Client)
 	}
-}
-func genID() {
-	if ID == "" {
-		rand.Seed(time.Now().UnixNano())
-		id := make([]byte, 16)
-		for i, _ := range id {
-			id[i] = byte(rand.Intn(256))
-		}
-		ID = base64.StdEncoding.EncodeToString(id)
+	for _, c := range Clients {
+		FsMutex.Lock()
+		FileSystem = AppendFilesystem(FileSystem, c.FileSystem)
+		FsMutex.Unlock()
 	}
+	CMutex.Unlock()
+	err = GetFileList()
+	logger.Error(err)
 }

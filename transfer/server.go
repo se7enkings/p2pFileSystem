@@ -43,12 +43,14 @@ func handleTcpConn(conn net.Conn) {
 	case settings.FileSystemListProtocol:
 		logger.Info("receive a fileSystemList message from " + conn.RemoteAddr().String())
 		filesystem.OnReceiveFilesystem(buff)
+	case settings.FileSystemRequestProtocol:
+		logger.Info("receive a fileSystemRequest message from " + conn.RemoteAddr().String())
+		filesystem.OnRequestedFilesystem(string(buff))
 	case settings.InvalidUsername:
 		logger.Info("receive a invalidUsername message from " + conn.RemoteAddr().String())
 		onReceiveInvalidUsername()
 	}
 }
-
 func onReceiveInvalidUsername() {
 	logger.Error(errors.New("duplicate username"))
 }
