@@ -17,6 +17,7 @@ var id string
 
 var clients map[string]NDMessage // key: Username
 var cMutex sync.Mutex = sync.Mutex{}
+var cMutex2 sync.Mutex = sync.Mutex{}
 
 func sendNeighborSolicitation(messageType string, targetAddr string) {
 	udpAddr, err := net.ResolveUDPAddr("udp", targetAddr+settings.NeighborDiscoveryPort)
@@ -82,10 +83,10 @@ func StartNeighborDiscoveryServer() {
 		switch messageType {
 		case settings.NeighborDiscoveryProtocol:
 			logger.Info("receive ndp message from " + client.Addr)
-			onReceiveNeighborSolicitation(client)
+			go onReceiveNeighborSolicitation(client)
 		case settings.NeighborDiscoveryProtocolEcho:
 			logger.Info("receive ndp echo message from " + client.Addr)
-			onReceiveNeighborSolicitationEcho(client)
+			go onReceiveNeighborSolicitationEcho(client)
 		}
 	}
 }
@@ -97,6 +98,20 @@ func onReceiveNeighborSolicitation(client NDMessage) {
 			messagePipe <- Message{Type: settings.InvalidUsername, Load: []byte(settings.InvalidUsername), Destination: client.Addr}
 		default:
 			sendNeighborSolicitation(settings.NeighborDiscoveryProtocolEcho, client.Addr)
+			cMutex2.Lock()
+			cMutex.Lock()
+			_, ok := clients[client.Username]
+			if !ok {
+				message, err := NDMessage2Json(NDMessage{Username: settings.GetSettings().GetUsername(), Group: settings.GetSettings().GetGroupName()})
+				if err != nil {
+					logger.Warning(err)
+					return
+				}
+				logger.Info("receive neighbor solicitation message from an unknown client, request its file list")
+				messagePipe <- Message{Type: settings.FileSystemRequestProtocol, Destination: client.Addr, Load: message}
+			}
+			cMutex.Unlock()
+			cMutex2.Unlock()
 		}
 	}
 }
@@ -105,9 +120,9 @@ func onReceiveNeighborSolicitationEcho(client NDMessage) {
 		_, ok := clients[client.Username]
 		if ok {
 			logger.Info("found an old client from " + client.Addr)
-		} else {
-			logger.Info("found a new client from " + client.Addr)
+			return
 		}
+		logger.Info("found a new client from " + client.Addr)
 		cMutex.Lock()
 		clients[client.Username] = client
 		cMutex.Unlock()
@@ -125,10 +140,12 @@ func NeighborDiscovery() {
 }
 func DoNeighborDiscovery() {
 	clients = make(map[string]NDMessage)
+	cMutex2.Lock()
 	for i := 0; i < 3; i++ {
 		sendNeighborSolicitation(settings.NeighborDiscoveryProtocol, settings.BroadcastAddress)
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second)
 	}
+	cMutex2.Unlock()
 	for name, _ := range filesystem.Clients {
 		_, ok := clients[name]
 		if !ok {

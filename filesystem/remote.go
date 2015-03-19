@@ -21,10 +21,11 @@ type Client struct {
 }
 
 func OnReceiveFilesystem(filesystemMessage []byte) {
-	client, err := Json2FileSystem(filesystemMessage)
+	client, err := Json2Client(filesystemMessage)
 	if err != nil {
 		logger.Warning(err)
 	}
+	logger.Info("receive file list from " + client.Username)
 	CMutex.Lock()
 	Clients[client.Username] = client
 	CMutex.Unlock()
@@ -34,26 +35,28 @@ func OnReceiveFilesystem(filesystemMessage []byte) {
 }
 func OnRequestedFilesystem(name string) {
 	FslMutex.Lock()
-	message, err := FileSystem2Json(Client{Username: settings.GetSettings().GetUsername(), FileSystem: FileSystemLocal})
+	message, err := Client2Json(Client{Username: settings.GetSettings().GetUsername(), FileSystem: FileSystemLocal})
 	FslMutex.Unlock()
 	if err != nil {
 		logger.Warning(err)
 		return
 	}
+	logger.Info("send filesystem to " + name)
 	MessagePipe <- Message{Type: settings.FileSystemListProtocol, DestinationUsername: name, Load: message}
 }
 func OnClientMissing(name string) {
+	logger.Info("missing client " + name)
 	CMutex.Lock()
 	delete(Clients, name)
 	CMutex.Unlock()
 	Init()
 }
 
-func FileSystem2Json(fileSystem Client) ([]byte, error) {
+func Client2Json(fileSystem Client) ([]byte, error) {
 	b, err := json.Marshal(fileSystem)
 	return b, err
 }
-func Json2FileSystem(jsonFileListMessage []byte) (Client, error) {
+func Json2Client(jsonFileListMessage []byte) (Client, error) {
 	fs := Client{}
 	err := json.Unmarshal(jsonFileListMessage, &fs)
 	return fs, err
