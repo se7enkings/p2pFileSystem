@@ -30,7 +30,9 @@ func GetLocalFiles(sharedPath string, currentPath string, outputChan chan LocalF
 	return nil
 }
 func RemoveLocalFile(fileHash string) {
+	fsMutex.Lock()
 	file := FileSystem[fileHash]
+	fsMutex.Unlock()
 	name := settings.GetSettings().GetSharePath() + file.Path + "/" + file.Name
 	os.Remove(name)
 }

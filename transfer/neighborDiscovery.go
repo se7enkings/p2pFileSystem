@@ -56,6 +56,7 @@ func StartNeighborDiscoveryServer() {
 	if err != nil {
 		logger.Error(err)
 	}
+	logger.Info("start ndp server")
 	defer conn.Close()
 	for {
 		buff := make([]byte, settings.NeighborDiscoveryMessageBufferSize)
@@ -81,10 +82,11 @@ func StartNeighborDiscoveryServer() {
 func onReceiveNeighborSolicitation(client NDMessage) {
 	if client.Group == settings.GetSettings().GetGroupName() && client.ID != filesystem.ID {
 		_, ok := filesystem.Clients[client.Username]
-		if ok || client.Username == settings.GetSettings().GetUsername() {
+		switch {
+		case client.Username == settings.GetSettings().GetUsername():
 			SendMessage(client.Addr, settings.InvalidUsername, []byte(settings.InvalidUsername))
-		} else {
-			SendNeighborSolicitation(client.Addr)
+		case ok:
+		default:
 			filesystem.OnDiscoverClient(client.Username, client.Addr)
 		}
 	}
@@ -92,11 +94,6 @@ func onReceiveNeighborSolicitation(client NDMessage) {
 func InitNeighborDiscovery() {
 	go StartNeighborDiscoveryServer()
 	SendNeighborSolicitation(settings.BroadcastAddress)
-	//    timer := time.Tick(time.Second * 1)
-	//	for {
-	//		SendNeighborSolicitation(settings.BroadcastAddress)
-	//		<-timer
-	//	}
 }
 
 type NDMessage struct {

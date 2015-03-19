@@ -28,7 +28,9 @@ Loop:
 		case "ls":
 			fmt.Println(filesystem.Node2str(currentDir, 0, false))
 		case "lstree":
+			filesystem.FlMutex.Lock()
 			fmt.Println(filesystem.FileList)
+			filesystem.FlMutex.Unlock()
 		case "cd":
 			name := ""
 			fmt.Scan(&name)

@@ -26,3 +26,6 @@ p2pFileSystem
 
 # JetBrains
 .idea
+
+# config file
+config.json

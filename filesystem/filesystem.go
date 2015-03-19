@@ -3,16 +3,23 @@ package filesystem
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"io/ioutil"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 )
 
 var FileSystem Filesystem
+var fsMutex sync.Mutex = sync.Mutex{}
+
 var FileSystemLocal Filesystem
+var fslMutex sync.Mutex = sync.Mutex{}
+
 var FileList Node
+var FlMutex sync.Mutex = sync.Mutex{}
 
 func ReadLocalFile(folder string) error {
 	fileSystem := make(Filesystem)
@@ -30,14 +37,19 @@ func ReadLocalFile(folder string) error {
 		hash := base64.StdEncoding.EncodeToString(sha256Sum[:])
 		fileSystem[hash] = File{f.FileInfo.Name(), f.Path, f.FileInfo.Size(), true}
 	}
+	fsMutex.Lock()
 	FileSystem = fileSystem
+	fsMutex.Unlock()
+	fslMutex.Lock()
 	FileSystemLocal = fileSystem
+	fslMutex.Unlock()
 	return nil
 }
 
 func GetFileList() error {
 	fileList := Node{"root", true, true, 0, "", make(map[string]*Node)}
 	fileList.Children[".."] = &fileList
+	fsMutex.Lock()
 	for fileHash, file := range FileSystem {
 		folder := createFolder(&fileList, file.Path)
 		_, ok := folder.Children[file.Name]
@@ -48,7 +60,10 @@ func GetFileList() error {
 		}
 		folder.Children[name] = &Node{name, false, file.AtLocal, file.Size, fileHash, nil}
 	}
+	fsMutex.Unlock()
+	FlMutex.Lock()
 	FileList = fileList
+	FlMutex.Unlock()
 	return nil
 }
 func createFolder(rootFolder *Node, folder string) *Node {
@@ -71,22 +86,26 @@ func doCreateFolder(rootFolder *Node, folders []string) *Node {
 }
 func Init() {
 	err := ReadLocalFile(settings.GetSettings().GetSharePath())
-	checkError(err)
+	logger.Error(err)
 	for _, c := range Clients {
+		fsMutex.Lock()
 		FileSystem = AppendFilesystem(FileSystem, c.FileSystem)
+		fsMutex.Unlock()
 	}
 	err = GetFileList()
-	checkError(err)
-
-	rand.Seed(time.Now().UnixNano())
-	id := make([]byte, 16)
-	for i, _ := range id {
-		id[i] = byte(rand.Intn(256))
+	logger.Error(err)
+	genID()
+	if Clients == nil {
+		Clients = make(map[string]Client)
 	}
-	ID = base64.StdEncoding.EncodeToString(id)
 }
-func checkError(err error) {
-	if err != nil {
-		panic(err)
+func genID() {
+	if ID == "" {
+		rand.Seed(time.Now().UnixNano())
+		id := make([]byte, 16)
+		for i, _ := range id {
+			id[i] = byte(rand.Intn(256))
+		}
+		ID = base64.StdEncoding.EncodeToString(id)
 	}
 }
