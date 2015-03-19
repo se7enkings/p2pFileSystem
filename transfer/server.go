@@ -44,8 +44,15 @@ func handleTcpConn(conn net.Conn) {
 		logger.Info("receive a fileSystemList message from " + conn.RemoteAddr().String())
 		filesystem.OnReceiveFilesystem(buff)
 	case settings.FileSystemRequestProtocol:
-		logger.Info("receive a fileSystemRequest message from " + conn.RemoteAddr().String())
-		filesystem.OnRequestedFilesystem(string(buff))
+		message, err := Json2NDMessage(buff)
+		if err != nil {
+			logger.Warning(err)
+			return
+		}
+		if message.Group == settings.GetSettings().GetGroupName() {
+			logger.Info("receive a fileSystemRequest message from " + conn.RemoteAddr().String())
+			filesystem.OnRequestedFilesystem(message.Username)
+		}
 	case settings.InvalidUsername:
 		logger.Info("receive a invalidUsername message from " + conn.RemoteAddr().String())
 		onReceiveInvalidUsername()
