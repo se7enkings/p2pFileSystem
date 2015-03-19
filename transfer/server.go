@@ -3,7 +3,6 @@ package transfer
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"

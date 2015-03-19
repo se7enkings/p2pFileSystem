@@ -73,7 +73,7 @@ func StartNeighborDiscoveryServer() {
 				logger.Warning(err)
 				continue
 			}
-			logger.Info("receive ndp message, " + client.String())
+			logger.Info("receive ndp message from " + client.Addr)
 			onReceiveNeighborSolicitation(client)
 		}
 	}
