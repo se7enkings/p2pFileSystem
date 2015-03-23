@@ -15,7 +15,7 @@ type File struct {
 	Size    int64 // bytes
 	AtLocal bool  `json:"-"`
 	//    BlockHash [][]byte // SHA-256 Hash
-	//    Owner User
+    Owner string
 	//	    Permission byte
 }
 

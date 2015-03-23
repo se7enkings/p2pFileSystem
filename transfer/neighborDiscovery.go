@@ -17,7 +17,9 @@ var id string
 
 var clients map[string]NDMessage // key: Username
 var cMutex sync.Mutex = sync.Mutex{}
-var cMutex2 sync.Mutex = sync.Mutex{}
+
+var clientList map[string]NDMessage
+var clMutex sync.Mutex = sync.Mutex{}
 
 func sendNeighborSolicitation(messageType string, targetAddr string) {
 	udpAddr, err := net.ResolveUDPAddr("udp", targetAddr+settings.NeighborDiscoveryPort)
@@ -98,9 +100,8 @@ func onReceiveNeighborSolicitation(client NDMessage) {
 			messagePipe <- Message{Type: settings.InvalidUsername, Load: []byte(settings.InvalidUsername), Destination: client.Addr}
 		default:
 			sendNeighborSolicitation(settings.NeighborDiscoveryProtocolEcho, client.Addr)
-			cMutex2.Lock()
-			cMutex.Lock()
-			_, ok := clients[client.Username]
+			clMutex.Lock()
+			_, ok := clientList[client.Username]
 			if !ok {
 				message, err := NDMessage2Json(NDMessage{Username: settings.GetSettings().GetUsername(), Group: settings.GetSettings().GetGroupName()})
 				if err != nil {
@@ -108,11 +109,10 @@ func onReceiveNeighborSolicitation(client NDMessage) {
 					return
 				}
 				logger.Info("receive neighbor solicitation message from an unknown client, request its file list")
-                clients[client.Username] = client
+				clientList[client.Username] = client
 				messagePipe <- Message{Type: settings.FileSystemRequestProtocol, Destination: client.Addr, Load: message}
 			}
-			cMutex.Unlock()
-			cMutex2.Unlock()
+			clMutex.Unlock()
 		}
 	}
 }
@@ -140,13 +140,17 @@ func NeighborDiscovery() {
 	}
 }
 func DoNeighborDiscovery() {
+	cMutex.Lock()
 	clients = make(map[string]NDMessage)
-	cMutex2.Lock()
+	cMutex.Unlock()
 	for i := 0; i < 3; i++ {
 		sendNeighborSolicitation(settings.NeighborDiscoveryProtocol, settings.BroadcastAddress)
 		time.Sleep(time.Second)
 	}
-	cMutex2.Unlock()
+	cMutex.Lock()
+	clMutex.Lock()
+	clientList = clients
+	clMutex.Unlock()
 	for name, _ := range filesystem.Clients {
 		_, ok := clients[name]
 		if !ok {
@@ -166,6 +170,7 @@ func DoNeighborDiscovery() {
 			messagePipe <- Message{Type: settings.FileSystemRequestProtocol, Destination: c.Addr, Load: message}
 		}
 	}
+	cMutex.Unlock()
 }
 
 type NDMessage struct {

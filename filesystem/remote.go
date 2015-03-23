@@ -29,10 +29,7 @@ func OnReceiveFilesystem(filesystemMessage []byte) {
 	CMutex.Lock()
 	Clients[client.Username] = client
 	CMutex.Unlock()
-	FsMutex.Lock()
-	FileSystem = AppendFilesystem(FileSystem, client.FileSystem)
-	FsMutex.Unlock()
-    GetFileList()
+	Init()
 }
 func OnRequestedFilesystem(name string) {
 	FslMutex.Lock()
@@ -51,6 +48,9 @@ func OnClientMissing(name string) {
 	delete(Clients, name)
 	CMutex.Unlock()
 	Init()
+}
+func GetFile(hash string) {
+
 }
 
 func Client2Json(fileSystem Client) ([]byte, error) {

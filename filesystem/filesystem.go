@@ -30,7 +30,12 @@ func ReadLocalFile(folder string) error {
 		}
 		sha256Sum := sha256.Sum256(fileData)
 		hash := base64.StdEncoding.EncodeToString(sha256Sum[:])
-		fileSystem[hash] = File{f.FileInfo.Name(), f.Path, f.FileInfo.Size(), true}
+		fileSystem[hash] = File{
+            Name: f.FileInfo.Name(),
+            Path: f.Path,
+            Size: f.FileInfo.Size(),
+            AtLocal: true,
+            Owner: settings.GetSettings().GetUsername()}
 	}
 	FsMutex.Lock()
 	FileSystem = fileSystem
@@ -94,4 +99,17 @@ func Init() {
 	CMutex.Unlock()
 	err = GetFileList()
 	logger.Error(err)
+}
+func AppendFilesystem(originFileSystem Filesystem, receivedFileSystem Filesystem) Filesystem {
+	// because the File.IsLocal is ignored by json, IsLocal in received Filesystem is always default bool value(false).
+	// It is possible that duplicate filename exists in the returned Filesystem,
+	for hash, file := range receivedFileSystem {
+		_, ok := originFileSystem[hash]
+		if ok {
+			continue
+		} else {
+			originFileSystem[hash] = file
+		}
+	}
+	return originFileSystem
 }

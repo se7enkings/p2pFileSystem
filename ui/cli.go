@@ -53,9 +53,19 @@ Loop:
 		case "get":
 			name := ""
 			fmt.Scan(&name)
-			fmt.Println(name)
+            file, ok := currentDir.Children[name]
+            switch {
+            case !ok:
+                fmt.Printf("no such file or directory: %s\n", name)
+            case file.IsDir:
+                fmt.Printf("not a file: %s\n", name)
+            case file.AtLocal:
+                fmt.Println("download complete")
+            case !file.AtLocal:
+                filesystem.GetFile(file.FileHash)
+                filesystem.Init()
+            }
 			//TODO: complete this command
-
 		case "rm":
 			name := ""
 			fmt.Scan(&name)
