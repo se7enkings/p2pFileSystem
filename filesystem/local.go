@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func GetLocalFiles(sharedPath string, currentPath string, outputChan chan LocalFile) error {
+func getLocalFiles(sharedPath string, currentPath string, outputChan chan LocalFile) error {
 	fileInfos, err := ioutil.ReadDir(sharedPath)
 	if err != nil {
 		return err
@@ -16,10 +16,9 @@ func GetLocalFiles(sharedPath string, currentPath string, outputChan chan LocalF
 			if settings.GetSettings().IsIgnored(v.Name()) {
 				continue
 			}
-			GetLocalFiles(sharedPath+"/"+v.Name(), currentPath+"/"+v.Name(), outputChan)
+			getLocalFiles(sharedPath+"/"+v.Name(), currentPath+"/"+v.Name(), outputChan)
 		} else {
 			if !settings.GetSettings().IsIgnored(v.Name()) {
-
 				outputChan <- LocalFile{currentPath, v}
 			}
 		}
@@ -35,4 +34,13 @@ func RemoveLocalFile(fileHash string) {
 	FsMutex.Unlock()
 	name := settings.GetSettings().GetSharePath() + file.Path + "/" + file.Name
 	os.Remove(name)
+}
+func RemoveDir(path string) {
+
+}
+func MakeDir(path string) {
+
+}
+func Rename(path0 string, path1 string) {
+
 }

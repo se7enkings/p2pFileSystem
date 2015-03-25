@@ -52,6 +52,9 @@ func OnClientMissing(name string) {
 func GetFile(hash string) {
 
 }
+func UploadFile(path string) {
+
+}
 
 func Client2Json(fileSystem Client) ([]byte, error) {
 	b, err := json.Marshal(fileSystem)

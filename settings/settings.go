@@ -2,6 +2,7 @@ package settings
 
 import (
 	"encoding/json"
+	"github.com/CRVV/p2pFileSystem/logger"
 	"io/ioutil"
 	"sync"
 )
@@ -22,68 +23,86 @@ func GetSettings() *Settings {
 		configFile, err := ioutil.ReadFile("config.json")
 		if err != nil {
 			settings = Settings{"crvv", "Group", "test/testLocalFolder", make(map[string]int)}
-			settings.SaveSettings()
+			settings.saveSettings()
 		} else {
 			settings = Settings{}
 			err = json.Unmarshal(configFile, &settings)
-			checkError(err)
+			logger.Error(err)
 		}
 	}
 	mutex.Unlock()
 	return &settings
 }
-func (s *Settings) SaveSettings() {
+func (s *Settings) saveSettings() {
+	mutex.Lock()
 	configFile, err := json.Marshal(s)
-	// TODO: an error should not panic
-	checkError(err)
+	mutex.Unlock()
+	logger.Warning(err)
 	ioutil.WriteFile("config.json", configFile, 0644)
 }
 
 func (s *Settings) GetSharePath() string {
-	return s.SharePath
+	mutex.Lock()
+	path := s.SharePath
+	mutex.Unlock()
+	return path
 }
 func (s *Settings) SetSharePath(path string) {
+	mutex.Lock()
 	s.SharePath = path
-	s.SaveSettings()
+	s.saveSettings()
+	mutex.Unlock()
 }
 func (s *Settings) IsIgnored(name string) bool {
+	mutex.Lock()
 	_, ok := s.Ignore[name]
+	mutex.Unlock()
 	return ok
 }
 func (s *Settings) GetIgnoreList() []string {
 	list := make([]string, 8)
+	mutex.Lock()
 	for name, _ := range s.Ignore {
 		list = append(list, name)
 	}
+	mutex.Unlock()
 	return list
 }
 func (s *Settings) AddIgnore(name string) {
+	mutex.Lock()
 	s.Ignore[name] = 1
-	s.SaveSettings()
+	mutex.Unlock()
+	s.saveSettings()
 }
 func (s *Settings) DeleteIgnore(name string) {
+	mutex.Lock()
 	delete(s.Ignore, name)
-	s.SaveSettings()
+	mutex.Unlock()
+	s.saveSettings()
 }
 
 func (s *Settings) GetUsername() string {
-	return s.Username
+	mutex.Lock()
+	name := s.Username
+	mutex.Unlock()
+	return name
 }
 func (s *Settings) SetUsername(name string) {
+	mutex.Lock()
 	s.Username = name
-	s.SaveSettings()
+	mutex.Unlock()
+	s.saveSettings()
 }
 func (s *Settings) GetGroupName() string {
-	return s.GroupName
+	mutex.Lock()
+	name := s.GroupName
+	mutex.Unlock()
+	return name
 }
 func (s *Settings) SetGroupName(name string) {
+	mutex.Lock()
 	s.GroupName = name
-	s.SaveSettings()
+	mutex.Unlock()
+	s.saveSettings()
 	// TODO: changing group need to reconnect
-}
-
-func checkError(err error) {
-	if err != nil {
-		panic(err)
-	}
 }

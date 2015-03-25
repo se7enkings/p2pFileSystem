@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var debugMode bool = true
+var debugMode bool = false
 
 func Error(e interface{}) {
 	if e != nil && debugMode {

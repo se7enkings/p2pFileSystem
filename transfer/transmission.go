@@ -41,11 +41,11 @@ func FindMessageAndSend() {
 		select {
 		case messageFromFS := <-filesystem.MessagePipe:
 			clMutex.Lock()
-            client, ok := clientList[messageFromFS.DestinationUsername]
-            if !ok {
-                logger.Warning("try sending a message to an unknown client")
-                continue
-            }
+			client, ok := clientList[messageFromFS.DestinationUsername]
+			if !ok {
+				logger.Warning("try sending a message to an unknown client")
+				continue
+			}
 			sendMessage(client.Addr, messageFromFS.Type, messageFromFS.Load)
 			clMutex.Unlock()
 		case message := <-messagePipe:

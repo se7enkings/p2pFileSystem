@@ -108,7 +108,7 @@ func onReceiveNeighborSolicitation(client NDMessage) {
 					logger.Warning(err)
 					return
 				}
-				logger.Info("receive neighbor solicitation message from an unknown client, request its file list")
+				logger.Info("receive neighbor solicitation message from an unknown client. request its file list")
 				clientList[client.Username] = client
 				messagePipe <- Message{Type: settings.FileSystemRequestProtocol, Destination: client.Addr, Load: message}
 			}
@@ -120,7 +120,7 @@ func onReceiveNeighborSolicitationEcho(client NDMessage) {
 	if client.Group == settings.GetSettings().GetGroupName() && client.ID != id {
 		_, ok := clients[client.Username]
 		if ok {
-			logger.Info("found an old client from " + client.Addr)
+			logger.Info("found a known client from " + client.Addr)
 			return
 		}
 		logger.Info("found a new client from " + client.Addr)
@@ -172,6 +172,9 @@ func DoNeighborDiscovery() {
 	}
 	cMutex.Unlock()
 }
+func ReConnect() {
+	// TODO
+}
 
 type NDMessage struct {
 	Username string
@@ -196,4 +199,8 @@ func genID() {
 		idd[i] = byte(rand.Intn(256))
 	}
 	id = base64.StdEncoding.EncodeToString(idd)
+}
+
+func OnExit() {
+	// TODO
 }

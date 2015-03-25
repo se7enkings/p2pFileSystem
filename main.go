@@ -9,6 +9,8 @@ import (
 
 func main() {
 	runtime.GOMAXPROCS(4)
+	defer transfer.OnExit()
+
 	filesystem.Init()
 	go transfer.InitNeighborDiscovery()
 	go transfer.StartFilesystemServer()

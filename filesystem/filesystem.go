@@ -16,11 +16,11 @@ var FsMutex sync.Mutex = sync.Mutex{}
 var FileList Node
 var FlMutex sync.Mutex = sync.Mutex{}
 
-func ReadLocalFile(folder string) error {
+func readLocalFile(folder string) error {
 	fileSystem := make(Filesystem)
 	filesChan := make(chan LocalFile)
 
-	go GetLocalFiles(folder, "", filesChan)
+	go getLocalFiles(folder, "", filesChan)
 
 	for f := range filesChan {
 		// TODO: ioutil.ReadFile cannot handle big file(use too much memory), fix it.
@@ -31,11 +31,11 @@ func ReadLocalFile(folder string) error {
 		sha256Sum := sha256.Sum256(fileData)
 		hash := base64.StdEncoding.EncodeToString(sha256Sum[:])
 		fileSystem[hash] = File{
-            Name: f.FileInfo.Name(),
-            Path: f.Path,
-            Size: f.FileInfo.Size(),
-            AtLocal: true,
-            Owner: settings.GetSettings().GetUsername()}
+			Name:    f.FileInfo.Name(),
+			Path:    f.Path,
+			Size:    f.FileInfo.Size(),
+			AtLocal: true,
+			Owner:   settings.GetSettings().GetUsername()}
 	}
 	FsMutex.Lock()
 	FileSystem = fileSystem
@@ -46,7 +46,7 @@ func ReadLocalFile(folder string) error {
 	return nil
 }
 
-func GetFileList() error {
+func getFileList() error {
 	fileList := Node{"root", true, true, 0, "", make(map[string]*Node)}
 	fileList.Children[".."] = &fileList
 	FsMutex.Lock()
@@ -85,7 +85,7 @@ func doCreateFolder(rootFolder *Node, folders []string) *Node {
 	return rootFolder.Children[folders[0]]
 }
 func Init() {
-	err := ReadLocalFile(settings.GetSettings().GetSharePath())
+	err := readLocalFile(settings.GetSettings().GetSharePath())
 	logger.Error(err)
 	CMutex.Lock()
 	if Clients == nil {
@@ -93,16 +93,16 @@ func Init() {
 	}
 	for _, c := range Clients {
 		FsMutex.Lock()
-		FileSystem = AppendFilesystem(FileSystem, c.FileSystem)
+		FileSystem = appendFilesystem(FileSystem, c.FileSystem)
 		FsMutex.Unlock()
 	}
 	CMutex.Unlock()
-	err = GetFileList()
+	err = getFileList()
 	logger.Error(err)
 }
-func AppendFilesystem(originFileSystem Filesystem, receivedFileSystem Filesystem) Filesystem {
+func appendFilesystem(originFileSystem Filesystem, receivedFileSystem Filesystem) Filesystem {
 	// because the File.IsLocal is ignored by json, IsLocal in received Filesystem is always default bool value(false).
-	// It is possible that duplicate filename exists in the returned Filesystem,
+	// It is possible that duplicate filename exists in the returned Filesystem(the content is different).
 	for hash, file := range receivedFileSystem {
 		_, ok := originFileSystem[hash]
 		if ok {
