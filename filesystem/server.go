@@ -1,9 +1,8 @@
-package transfer
+package filesystem
 
 import (
 	"encoding/binary"
 	"errors"
-	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"net"
@@ -42,7 +41,7 @@ func handleTcpConn(conn net.Conn) {
 	switch messageType {
 	case settings.FileSystemListProtocol:
 		logger.Info("receive a fileSystemList message from " + conn.RemoteAddr().String())
-		filesystem.OnReceiveFilesystem(buff)
+		OnReceiveFilesystem(buff)
 	case settings.FileSystemRequestProtocol:
 		message, err := Json2NDMessage(buff)
 		if err != nil {
@@ -51,7 +50,7 @@ func handleTcpConn(conn net.Conn) {
 		}
 		if message.Group == settings.GetSettings().GetGroupName() {
 			logger.Info("receive a fileSystemRequest message from " + conn.RemoteAddr().String())
-			filesystem.OnRequestedFilesystem(message.Username)
+			OnRequestedFilesystem(message.Username)
 		}
 	case settings.InvalidUsername:
 		logger.Info("receive a invalidUsername message from " + conn.RemoteAddr().String())

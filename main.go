@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/CRVV/p2pFileSystem/filesystem"
+	"github.com/CRVV/p2pFileSystem/ndp"
 	"github.com/CRVV/p2pFileSystem/transfer"
 	"github.com/CRVV/p2pFileSystem/ui"
 	"runtime"
@@ -9,12 +10,14 @@ import (
 
 func main() {
 	runtime.GOMAXPROCS(4)
-	defer transfer.OnExit()
+	defer ndp.OnExit()
 
 	filesystem.Init()
-	go transfer.InitNeighborDiscovery()
+
+	go ndp.StartNeighborDiscoveryServer()
+	go ndp.NeighborDiscovery()
+
 	go transfer.StartFilesystemServer()
-	go transfer.FindMessageAndSend()
-	go transfer.NeighborDiscovery()
+
 	ui.StartCLI()
 }

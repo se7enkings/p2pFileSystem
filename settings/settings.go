@@ -43,9 +43,8 @@ func (s *Settings) saveSettings() {
 
 func (s *Settings) GetSharePath() string {
 	mutex.Lock()
-	path := s.SharePath
-	mutex.Unlock()
-	return path
+	defer mutex.Unlock()
+	return s.SharePath
 }
 func (s *Settings) SetSharePath(path string) {
 	mutex.Lock()
@@ -83,9 +82,8 @@ func (s *Settings) DeleteIgnore(name string) {
 
 func (s *Settings) GetUsername() string {
 	mutex.Lock()
-	name := s.Username
-	mutex.Unlock()
-	return name
+	defer mutex.Unlock()
+	return s.Username
 }
 func (s *Settings) SetUsername(name string) {
 	mutex.Lock()
@@ -95,14 +93,12 @@ func (s *Settings) SetUsername(name string) {
 }
 func (s *Settings) GetGroupName() string {
 	mutex.Lock()
-	name := s.GroupName
-	mutex.Unlock()
-	return name
+	defer mutex.Unlock()
+	return s.GroupName
 }
 func (s *Settings) SetGroupName(name string) {
 	mutex.Lock()
 	s.GroupName = name
 	mutex.Unlock()
 	s.saveSettings()
-	// TODO: changing group need to reconnect
 }
