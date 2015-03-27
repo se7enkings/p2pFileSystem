@@ -67,10 +67,13 @@ func onReceiveNeighborSolicitation(peer Peer) {
 			if !ok {
 				logger.Info("receive neighbor solicitation message from an unknown client " + peer.Username)
 				peerList[peer.Username] = peer
-				peersChangeNotice <- peer.Username
 			}
 			plMutex.Unlock()
 			sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
+			time.Sleep(time.Millisecond * 100)
+			if !ok {
+				peersChangeNotice <- peer.Username
+			}
 		}
 	}
 }
