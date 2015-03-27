@@ -59,6 +59,9 @@ func StartNeighborDiscoveryServer() {
 	}
 }
 func onMissingPeer(peer Peer) {
+	plMutex.Lock()
+	delete(peerList, peer.Username)
+	plMutex.Unlock()
 	peersChangeNotice <- PeerListNotice{NoticeType: PeerMissingNotice, PeerName: peer.Username}
 }
 func onReceiveNeighborSolicitation(peer Peer) {
