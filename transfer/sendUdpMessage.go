@@ -35,6 +35,6 @@ func SendUdpPackage(message Message) error {
 		logger.Warning(err)
 		return err
 	}
-	logger.Info("a udp package has been sent to " + addr)
+	logger.Info("a udp package has been sent to " + addr + ", " + messageType)
 	return nil
 }

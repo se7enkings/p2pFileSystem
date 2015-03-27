@@ -1,13 +1,13 @@
 package ndp
 
 func GetPeerList() map[string]Peer {
-	PlMutex.Lock()
-	defer PlMutex.Unlock()
+	plMutex.Lock()
+	defer plMutex.Unlock()
 	return peerList
 }
 func GetPeerAddr(name string) string {
-	PlMutex.Lock()
-	defer PlMutex.Unlock()
+	plMutex.Lock()
+	defer plMutex.Unlock()
 	return peerList[name].Addr
 }
 func GetPeerFromJson(message []byte) (Peer, error) {

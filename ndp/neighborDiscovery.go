@@ -16,7 +16,7 @@ import (
 var peersChangeNotice chan string
 
 var peerList map[string]Peer
-var PlMutex sync.Mutex = sync.Mutex{}
+var plMutex sync.Mutex = sync.Mutex{}
 
 var peerListTemp map[string]Peer // key: Username
 var pltMutex sync.Mutex = sync.Mutex{}
@@ -66,15 +66,17 @@ func onReceiveNeighborSolicitation(peer Peer) {
 			logger.Info("found a peer which have the same username. kick it out!")
 			transfer.SendTcpMessage(IUMessage{peer.Addr})
 		} else {
-			PlMutex.Lock()
+			plMutex.Lock()
 			_, ok := peerList[peer.Username]
 			if !ok {
-				logger.Info("receive neighbor solicitation message from an unknown client.")
+				logger.Info("receive neighbor solicitation message from an unknown client " + peer.Username)
 				peerList[peer.Username] = peer
+			}
+			plMutex.Unlock()
+			sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
+			if !ok {
 				peersChangeNotice <- peer.Username
 			}
-			PlMutex.Unlock()
-			sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
 		}
 	}
 }
@@ -86,6 +88,9 @@ func onReceiveNeighborSolicitationEcho(peer Peer) {
 			return
 		}
 		logger.Info("found a new peer from " + peer.Addr)
+		plMutex.Lock()
+		peerList[peer.Username] = peer
+		plMutex.Unlock()
 		pltMutex.Lock()
 		peerListTemp[peer.Username] = peer
 		pltMutex.Unlock()
@@ -111,19 +116,18 @@ func doNeighborDiscovery() {
 		time.Sleep(time.Second)
 	}
 	pltMutex.Lock()
-	PlMutex.Lock()
+	plMutex.Lock()
 	if !reflect.DeepEqual(peerList, peerListTemp) {
 		peerList = peerListTemp
 		peersChangeNotice <- ReloadPeerList
 	}
-	PlMutex.Unlock()
+	plMutex.Unlock()
 	pltMutex.Unlock()
 
 }
 func sendNDMessage(messageType string, target string) {
 	message := Message{messageType, target}
 	transfer.SendUdpPackage(message)
-	logger.Info("a ndp message has been sent to " + target)
 }
 func genID() {
 	logger.Info("generate a new ID")
