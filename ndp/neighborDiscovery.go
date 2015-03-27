@@ -8,17 +8,16 @@ import (
 	"github.com/CRVV/p2pFileSystem/transfer"
 	"math/rand"
 	"net"
-	"reflect"
 	"sync"
 	"time"
 )
 
 var peersChangeNotice chan string
 
-var peerList map[string]Peer
+var peerList map[string]Peer = make(map[string]Peer)
 var plMutex sync.Mutex = sync.Mutex{}
 
-var peerListTemp map[string]Peer // key: Username
+var peerListTemp map[string]Peer = make(map[string]Peer) // key: Username
 var pltMutex sync.Mutex = sync.Mutex{}
 var id string
 
@@ -32,7 +31,6 @@ func StartNeighborDiscoveryServer() {
 	if err != nil {
 		logger.Error(err)
 	}
-	logger.Info("start ndp server")
 	defer conn.Close()
 	for {
 		buff := make([]byte, settings.NeighborDiscoveryMessageBufferSize)
@@ -52,10 +50,8 @@ func StartNeighborDiscoveryServer() {
 		peer.Addr, _, _ = net.SplitHostPort(remoteAddr.String())
 		switch messageType {
 		case settings.NeighborDiscoveryProtocol:
-			logger.Info("receive ndp message from " + peer.Addr)
 			go onReceiveNeighborSolicitation(peer)
 		case settings.NeighborDiscoveryProtocolEcho:
-			logger.Info("receive ndp echo message from " + peer.Addr)
 			go OnReceiveNeighborSolicitationEcho(peer)
 		}
 	}
@@ -80,18 +76,13 @@ func onReceiveNeighborSolicitation(peer Peer) {
 }
 func OnReceiveNeighborSolicitationEcho(peer Peer) {
 	if peer.Group == settings.GetSettings().GetGroupName() && peer.ID != id {
-		_, ok := peerListTemp[peer.Username]
-		if ok {
-			logger.Info("found a known peer from " + peer.Addr)
-			return
-		}
-		logger.Info("found a new peer from " + peer.Addr)
-		plMutex.Lock()
-		peerList[peer.Username] = peer
-		plMutex.Unlock()
 		pltMutex.Lock()
-		peerListTemp[peer.Username] = peer
-		pltMutex.Unlock()
+		_, ok := peerListTemp[peer.Username]
+		defer pltMutex.Unlock()
+		if !ok {
+			logger.Info("found a new peer from " + peer.Addr)
+			peerListTemp[peer.Username] = peer
+		}
 	}
 }
 func NeighborDiscovery(notice chan string) {
@@ -115,20 +106,17 @@ func doNeighborDiscovery() {
 	}
 	pltMutex.Lock()
 	plMutex.Lock()
-	if !reflect.DeepEqual(peerList, peerListTemp) {
-		peerList = peerListTemp
-		peersChangeNotice <- ReloadPeerList
-	}
+	peerList = peerListTemp
+	peersChangeNotice <- ReloadPeerList
 	plMutex.Unlock()
 	pltMutex.Unlock()
-
 }
 func sendNDMessage(messageType string, target string) {
 	message := Message{messageType, target}
 	transfer.SendUdpPackage(message)
 }
 func genID() {
-	logger.Info("generate a new ID")
+	//	logger.Info("generate a new ID")
 	rand.Seed(time.Now().UnixNano())
 	idd := make([]byte, 16)
 	for i, _ := range idd {

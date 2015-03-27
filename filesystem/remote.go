@@ -70,6 +70,7 @@ func onClientMissing(name string) {
 	Init()
 }
 func onDiscoverNewClient(name string) {
+	logger.Info("find a new client, request its file list")
 	message := ndp.Message{MessageType: settings.FileSystemRequestProtocol, Target: name}
 	transfer.SendTcpMessage(message)
 }

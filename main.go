@@ -19,5 +19,4 @@ func main() {
 	go filesystem.StartFilesystemServer()
 
 	ui.StartCLI()
-//	fmt.Println(settings.GetSettings().GetGroupName())
 }

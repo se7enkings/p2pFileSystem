@@ -10,11 +10,11 @@ import (
 )
 
 func StartFilesystemServer() {
-	logger.Info("start filesystem server")
 	listener, err := net.Listen("tcp", settings.CommunicationPort)
 	if err != nil {
 		logger.Error(err)
 	}
+	//	logger.Info("start filesystem server")
 	defer listener.Close()
 	for {
 		conn, err := listener.Accept()
@@ -52,7 +52,7 @@ func handleTcpConn(conn net.Conn) {
 		if peer.Group == settings.GetSettings().GetGroupName() {
 			logger.Info("receive a fileSystemRequest message from " + conn.RemoteAddr().String())
 			// TODO
-            ndp.OnReceiveNeighborSolicitationEcho(peer)
+			ndp.OnReceiveNeighborSolicitationEcho(peer)
 			OnRequestedFilesystem(peer.Username)
 		}
 	case settings.InvalidUsername:
