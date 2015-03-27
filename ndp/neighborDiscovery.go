@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var peersChangeNotice chan string
+var peersChangeNotice chan PeerListNotice
 
 var peerList map[string]Peer = make(map[string]Peer)
 var plMutex sync.Mutex = sync.Mutex{}
@@ -22,7 +22,7 @@ var pltMutex sync.Mutex = sync.Mutex{}
 var id string
 
 func OnExit() {
-	// TODO
+	sendNDMessage(settings.GoodByeProtocol, settings.BroadcastAddress)
 }
 func StartNeighborDiscoveryServer() {
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{
@@ -52,9 +52,14 @@ func StartNeighborDiscoveryServer() {
 		case settings.NeighborDiscoveryProtocol:
 			go onReceiveNeighborSolicitation(peer)
 		case settings.NeighborDiscoveryProtocolEcho:
-			go OnReceiveNeighborSolicitationEcho(peer)
+			go onReceiveNeighborSolicitationEcho(peer)
+		case settings.GoodByeProtocol:
+			go onMissingPeer(peer)
 		}
 	}
+}
+func onMissingPeer(peer Peer) {
+	peersChangeNotice <- PeerListNotice{NoticeType: PeerMissingNotice, PeerName: peer.Username}
 }
 func onReceiveNeighborSolicitation(peer Peer) {
 	if peer.Group == settings.GetSettings().GetGroupName() && peer.ID != id {
@@ -72,12 +77,12 @@ func onReceiveNeighborSolicitation(peer Peer) {
 			sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
 			time.Sleep(time.Millisecond * 100)
 			if !ok {
-				peersChangeNotice <- peer.Username
+				peersChangeNotice <- PeerListNotice{NoticeType: NewPeerNotice, PeerName: peer.Username}
 			}
 		}
 	}
 }
-func OnReceiveNeighborSolicitationEcho(peer Peer) {
+func onReceiveNeighborSolicitationEcho(peer Peer) {
 	if peer.Group == settings.GetSettings().GetGroupName() && peer.ID != id {
 		plMutex.Lock()
 		_, ok := peerList[peer.Username]
@@ -94,7 +99,7 @@ func OnReceiveNeighborSolicitationEcho(peer Peer) {
 		pltMutex.Unlock()
 	}
 }
-func NeighborDiscovery(notice chan string) {
+func NeighborDiscovery(notice chan PeerListNotice) {
 	peersChangeNotice = notice
 	genID()
 	for {
@@ -102,8 +107,6 @@ func NeighborDiscovery(notice chan string) {
 		time.Sleep(time.Minute)
 	}
 }
-
-const ReloadPeerList string = "reloaded peer list"
 
 func doNeighborDiscovery() {
 	pltMutex.Lock()
@@ -116,7 +119,7 @@ func doNeighborDiscovery() {
 	pltMutex.Lock()
 	plMutex.Lock()
 	peerList = peerListTemp
-	peersChangeNotice <- ReloadPeerList
+	peersChangeNotice <- PeerListNotice{NoticeType: ReloadPeerListNotice}
 	plMutex.Unlock()
 	pltMutex.Unlock()
 }

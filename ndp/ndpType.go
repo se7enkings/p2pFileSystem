@@ -67,3 +67,12 @@ func (m IUMessage) Destination() string {
 func (m IUMessage) Payload() []byte {
 	return []byte(settings.InvalidUsername)
 }
+
+const ReloadPeerListNotice int = 1
+const NewPeerNotice int = 2
+const PeerMissingNotice int = 3
+
+type PeerListNotice struct {
+	NoticeType int
+	PeerName   string
+}

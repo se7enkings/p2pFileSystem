@@ -21,11 +21,11 @@ type Client struct {
 }
 
 func MaintainClientList() {
-	changeNotice := make(chan string)
+	changeNotice := make(chan ndp.PeerListNotice)
 	go ndp.NeighborDiscovery(changeNotice)
 	for {
-		switch name := <-changeNotice; name {
-		case ndp.ReloadPeerList:
+		switch notice := <-changeNotice; notice.NoticeType {
+		case ndp.ReloadPeerListNotice:
 			newPeerList := ndp.GetPeerList()
 			for name, _ := range Clients {
 				_, ok := newPeerList[name]
@@ -41,10 +41,11 @@ func MaintainClientList() {
 					onDiscoverNewClient(name)
 				}
 			}
-		default:
-			onDiscoverNewClient(name)
+		case ndp.PeerMissingNotice:
+			onClientMissing(notice.PeerName)
+		case ndp.NewPeerNotice:
+			onDiscoverNewClient(notice.PeerName)
 		}
-
 	}
 }
 func OnReceiveFilesystem(filesystemMessage []byte) {
@@ -70,7 +71,6 @@ func onClientMissing(name string) {
 	Init()
 }
 func onDiscoverNewClient(name string) {
-	logger.Info("find a new client, request its file list")
 	message := ndp.Message{MessageType: settings.FileSystemRequestProtocol, Target: name}
 	transfer.SendTcpMessage(message)
 }
