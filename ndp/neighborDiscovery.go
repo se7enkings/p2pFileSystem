@@ -47,60 +47,60 @@ func StartNeighborDiscoveryServer() {
 			logger.Warning(err)
 			continue
 		}
+		if peer.Group != settings.GetSettings().GetGroupName() || peer.ID == id {
+			continue
+		}
 		peer.Addr, _, _ = net.SplitHostPort(remoteAddr.String())
 		switch messageType {
 		case settings.NeighborDiscoveryProtocol:
 			go onReceiveNeighborSolicitation(peer)
 		case settings.NeighborDiscoveryProtocolEcho:
-			go onReceiveNeighborSolicitationEcho(peer)
+			go OnReceiveNeighborSolicitationEcho(peer)
 		case settings.GoodByeProtocol:
 			go onMissingPeer(peer)
 		}
 	}
 }
 func onMissingPeer(peer Peer) {
+	logger.Info("receive goodbye from " + peer.Username)
 	plMutex.Lock()
 	delete(peerList, peer.Username)
 	plMutex.Unlock()
 	peersChangeNotice <- PeerListNotice{NoticeType: PeerMissingNotice, PeerName: peer.Username}
 }
 func onReceiveNeighborSolicitation(peer Peer) {
-	if peer.Group == settings.GetSettings().GetGroupName() && peer.ID != id {
-		if peer.Username == settings.GetSettings().GetUsername() {
-			logger.Info("found a peer which have the same username. kick it out!")
-			transfer.SendTcpMessage(IUMessage{peer.Addr})
-		} else {
-			plMutex.Lock()
-			_, ok := peerList[peer.Username]
-			if !ok {
-				logger.Info("receive neighbor solicitation message from an unknown client " + peer.Username)
-				peerList[peer.Username] = peer
-			}
-			plMutex.Unlock()
-			sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
-			time.Sleep(time.Millisecond * 100)
-			if !ok {
-				peersChangeNotice <- PeerListNotice{NoticeType: NewPeerNotice, PeerName: peer.Username}
-			}
-		}
-	}
-}
-func onReceiveNeighborSolicitationEcho(peer Peer) {
-	if peer.Group == settings.GetSettings().GetGroupName() && peer.ID != id {
+	if peer.Username == settings.GetSettings().GetUsername() {
+		logger.Info("found a peer which have the same username. kick it out!")
+		transfer.SendTcpMessage(IUMessage{peer.Addr})
+	} else {
 		plMutex.Lock()
 		_, ok := peerList[peer.Username]
 		if !ok {
+			logger.Info("receive neighbor solicitation message from an unknown client " + peer.Username)
 			peerList[peer.Username] = peer
-			logger.Info("found a new peer from " + peer.Addr)
 		}
 		plMutex.Unlock()
-		pltMutex.Lock()
-		_, ok = peerListTemp[peer.Username]
+		sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
+		time.Sleep(time.Millisecond * 100)
 		if !ok {
-			peerListTemp[peer.Username] = peer
+			peersChangeNotice <- PeerListNotice{NoticeType: NewPeerNotice, PeerName: peer.Username}
 		}
-		pltMutex.Unlock()
 	}
+}
+func OnReceiveNeighborSolicitationEcho(peer Peer) {
+	plMutex.Lock()
+	_, ok := peerList[peer.Username]
+	if !ok {
+		peerList[peer.Username] = peer
+		logger.Info("found a new peer from " + peer.Addr)
+	}
+	plMutex.Unlock()
+	pltMutex.Lock()
+	_, ok = peerListTemp[peer.Username]
+	if !ok {
+		peerListTemp[peer.Username] = peer
+	}
+	pltMutex.Unlock()
 }
 func NeighborDiscovery(notice chan PeerListNotice) {
 	peersChangeNotice = notice
