@@ -49,7 +49,7 @@ func StartNeighborDiscoveryServer() {
 			logger.Warning(err)
 			continue
 		}
-		peer.Addr = remoteAddr.String()
+		peer.Addr, _, _ = net.SplitHostPort(remoteAddr.String())
 		switch messageType {
 		case settings.NeighborDiscoveryProtocol:
 			logger.Info("receive ndp message from " + peer.Addr)
@@ -126,10 +126,12 @@ func sendNDMessage(messageType string, target string) {
 	logger.Info("a ndp message has been sent to " + target)
 }
 func genID() {
+	logger.Info("generate a new ID")
 	rand.Seed(time.Now().UnixNano())
 	idd := make([]byte, 16)
 	for i, _ := range idd {
 		idd[i] = byte(rand.Intn(256))
 	}
 	id = base64.StdEncoding.EncodeToString(idd)
+	myself.ID = id
 }

@@ -12,7 +12,7 @@ func SendUdpPackage(message Message) error {
 	messageType := message.Type()
 	payload := message.Payload()
 
-	udpAddr, err := net.ResolveUDPAddr("udp", addr)
+	udpAddr, err := net.ResolveUDPAddr("udp", addr+settings.NeighborDiscoveryPort)
 	if err != nil {
 		logger.Warning(err)
 		return err

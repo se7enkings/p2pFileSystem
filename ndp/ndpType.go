@@ -8,7 +8,6 @@ import (
 
 var myself Peer = Peer{
 	Username: settings.GetSettings().GetUsername(),
-	ID:       id,
 	Group:    settings.GetSettings().GetGroupName()}
 
 type Peer struct {
@@ -28,22 +27,13 @@ func (m Message) Type() string {
 }
 func (m Message) Destination() string {
 	var addr string
-	var port string
-	switch m.MessageType {
-	case settings.NeighborDiscoveryProtocol:
-		port = settings.NeighborDiscoveryPort
-	case settings.NeighborDiscoveryProtocolEcho:
-		port = settings.NeighborDiscoveryPort
-	default:
-		port = settings.CommunicationPort
-	}
 
 	if m.Target == settings.BroadcastAddress {
 		addr = m.Target
 	} else {
 		addr = GetPeerAddr(m.Target)
 	}
-	return addr + port
+	return addr
 }
 func (m Message) Payload() []byte {
 	payload, err := peer2Json(myself)
@@ -72,7 +62,7 @@ func (m IUMessage) Type() string {
 	return settings.InvalidUsername
 }
 func (m IUMessage) Destination() string {
-	return m.addr + settings.CommunicationPort
+	return m.addr
 }
 func (m IUMessage) Payload() []byte {
 	return []byte(settings.InvalidUsername)
