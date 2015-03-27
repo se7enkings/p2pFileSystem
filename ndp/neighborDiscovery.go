@@ -79,13 +79,19 @@ func onReceiveNeighborSolicitation(peer Peer) {
 }
 func OnReceiveNeighborSolicitationEcho(peer Peer) {
 	if peer.Group == settings.GetSettings().GetGroupName() && peer.ID != id {
-		pltMutex.Lock()
-		_, ok := peerListTemp[peer.Username]
-		defer pltMutex.Unlock()
+		plMutex.Lock()
+		_, ok := peerList[peer.Username]
 		if !ok {
+			peerList[peer.Username] = peer
 			logger.Info("found a new peer from " + peer.Addr)
+		}
+		plMutex.Unlock()
+		pltMutex.Lock()
+		_, ok = peerListTemp[peer.Username]
+		if !ok {
 			peerListTemp[peer.Username] = peer
 		}
+		pltMutex.Unlock()
 	}
 }
 func NeighborDiscovery(notice chan string) {
