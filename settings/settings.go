@@ -34,9 +34,7 @@ func GetSettings() *Settings {
 	return &settings
 }
 func (s *Settings) saveSettings() {
-	mutex.Lock()
 	configFile, err := json.Marshal(s)
-	mutex.Unlock()
 	logger.Warning(err)
 	ioutil.WriteFile("config.json", configFile, 0644)
 }
@@ -70,14 +68,14 @@ func (s *Settings) GetIgnoreList() []string {
 func (s *Settings) AddIgnore(name string) {
 	mutex.Lock()
 	s.Ignore[name] = 1
-	mutex.Unlock()
 	s.saveSettings()
+	mutex.Unlock()
 }
 func (s *Settings) DeleteIgnore(name string) {
 	mutex.Lock()
 	delete(s.Ignore, name)
-	mutex.Unlock()
 	s.saveSettings()
+	mutex.Unlock()
 }
 
 func (s *Settings) GetUsername() string {
@@ -88,8 +86,8 @@ func (s *Settings) GetUsername() string {
 func (s *Settings) SetUsername(name string) {
 	mutex.Lock()
 	s.Username = name
-	mutex.Unlock()
 	s.saveSettings()
+	mutex.Unlock()
 }
 func (s *Settings) GetGroupName() string {
 	mutex.Lock()
@@ -99,6 +97,6 @@ func (s *Settings) GetGroupName() string {
 func (s *Settings) SetGroupName(name string) {
 	mutex.Lock()
 	s.GroupName = name
-	mutex.Unlock()
 	s.saveSettings()
+	mutex.Unlock()
 }

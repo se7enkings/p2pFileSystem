@@ -56,7 +56,7 @@ func StartNeighborDiscoveryServer() {
 			go onReceiveNeighborSolicitation(peer)
 		case settings.NeighborDiscoveryProtocolEcho:
 			logger.Info("receive ndp echo message from " + peer.Addr)
-			go onReceiveNeighborSolicitationEcho(peer)
+			go OnReceiveNeighborSolicitationEcho(peer)
 		}
 	}
 }
@@ -71,16 +71,14 @@ func onReceiveNeighborSolicitation(peer Peer) {
 			if !ok {
 				logger.Info("receive neighbor solicitation message from an unknown client " + peer.Username)
 				peerList[peer.Username] = peer
+				peersChangeNotice <- peer.Username
 			}
 			plMutex.Unlock()
 			sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
-			if !ok {
-				peersChangeNotice <- peer.Username
-			}
 		}
 	}
 }
-func onReceiveNeighborSolicitationEcho(peer Peer) {
+func OnReceiveNeighborSolicitationEcho(peer Peer) {
 	if peer.Group == settings.GetSettings().GetGroupName() && peer.ID != id {
 		_, ok := peerListTemp[peer.Username]
 		if ok {

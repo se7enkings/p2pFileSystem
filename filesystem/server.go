@@ -51,6 +51,8 @@ func handleTcpConn(conn net.Conn) {
 		}
 		if peer.Group == settings.GetSettings().GetGroupName() {
 			logger.Info("receive a fileSystemRequest message from " + conn.RemoteAddr().String())
+			// TODO
+            ndp.OnReceiveNeighborSolicitationEcho(peer)
 			OnRequestedFilesystem(peer.Username)
 		}
 	case settings.InvalidUsername:
