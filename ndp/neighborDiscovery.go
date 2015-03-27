@@ -13,20 +13,15 @@ import (
 	"time"
 )
 
-var ClientsChangeNotice chan int = make(chan int)
+var peersChangeNotice chan string
 
-var ClientList map[string]Client
-var ClMutex sync.Mutex = sync.Mutex{}
+var peerList map[string]Peer
+var PlMutex sync.Mutex = sync.Mutex{}
 
-var clientTemp map[string]Client // key: Username
-var ctMutex sync.Mutex = sync.Mutex{}
+var peerListTemp map[string]Peer // key: Username
+var pltMutex sync.Mutex = sync.Mutex{}
 var id string
 
-func GetClientList() map[string]Client {
-	ClMutex.Lock()
-	defer ClMutex.Unlock()
-	return ClientList
-}
 func OnExit() {
 	// TODO
 }
@@ -49,107 +44,86 @@ func StartNeighborDiscoveryServer() {
 		headerSize := settings.MessageHeaderSize
 		messageType := string(buff[0:headerSize])
 		size := binary.LittleEndian.Uint32(buff[headerSize : headerSize*2])
-		client, err := json2client(buff[headerSize*2 : headerSize*2+int(size)])
+		peer, err := json2peer(buff[headerSize*2 : headerSize*2+int(size)])
 		if err != nil {
 			logger.Warning(err)
 			continue
 		}
-		client.Addr = remoteAddr.String()
+		peer.Addr = remoteAddr.String()
 		switch messageType {
 		case settings.NeighborDiscoveryProtocol:
-			logger.Info("receive ndp message from " + client.Addr)
-			go onReceiveNeighborSolicitation(client)
+			logger.Info("receive ndp message from " + peer.Addr)
+			go onReceiveNeighborSolicitation(peer)
 		case settings.NeighborDiscoveryProtocolEcho:
-			logger.Info("receive ndp echo message from " + client.Addr)
-			go onReceiveNeighborSolicitationEcho(client)
+			logger.Info("receive ndp echo message from " + peer.Addr)
+			go onReceiveNeighborSolicitationEcho(peer)
 		}
 	}
 }
-func onReceiveNeighborSolicitation(client Client) {
-	if client.Group == settings.GetSettings().GetGroupName() && client.ID != id {
-		if client.Username == settings.GetSettings().GetUsername() {
-			logger.Info("found a client which have the same username. kick it out!")
-			transfer.SendTcpMessage(IUMessage{client.Addr})
+func onReceiveNeighborSolicitation(peer Peer) {
+	if peer.Group == settings.GetSettings().GetGroupName() && peer.ID != id {
+		if peer.Username == settings.GetSettings().GetUsername() {
+			logger.Info("found a peer which have the same username. kick it out!")
+			transfer.SendTcpMessage(IUMessage{peer.Addr})
 		} else {
-			sendNDMessage(settings.NeighborDiscoveryProtocolEcho, client.Addr)
-			ClMutex.Lock()
-			_, ok := ClientList[client.Username]
+			PlMutex.Lock()
+			_, ok := peerList[peer.Username]
 			if !ok {
-				//				message, err := client2Json(Client{Username: settings.GetSettings().GetUsername(), Group: settings.GetSettings().GetGroupName()})
-				//				if err != nil {
-				//					logger.Warning(err)
-				//					return
-				//				}
 				logger.Info("receive neighbor solicitation message from an unknown client.")
-				ClientList[client.Username] = client
-				ClientsChangeNotice <- 1
-				//				messagePipe <- Message{Type: settings.FileSystemRequestProtocol, Destination: client.Addr, Load: message}
+				peerList[peer.Username] = peer
+				peersChangeNotice <- peer.Username
 			}
-			ClMutex.Unlock()
+			PlMutex.Unlock()
+			sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
 		}
 	}
 }
-func onReceiveNeighborSolicitationEcho(client Client) {
-	if client.Group == settings.GetSettings().GetGroupName() && client.ID != id {
-		_, ok := clientTemp[client.Username]
+func onReceiveNeighborSolicitationEcho(peer Peer) {
+	if peer.Group == settings.GetSettings().GetGroupName() && peer.ID != id {
+		_, ok := peerListTemp[peer.Username]
 		if ok {
-			logger.Info("found a known client from " + client.Addr)
+			logger.Info("found a known peer from " + peer.Addr)
 			return
 		}
-		logger.Info("found a new client from " + client.Addr)
-		ctMutex.Lock()
-		clientTemp[client.Username] = client
-		ctMutex.Unlock()
+		logger.Info("found a new peer from " + peer.Addr)
+		pltMutex.Lock()
+		peerListTemp[peer.Username] = peer
+		pltMutex.Unlock()
 	}
 }
-func NeighborDiscovery() {
+func NeighborDiscovery(notice chan string) {
+	peersChangeNotice = notice
 	genID()
 	for {
 		doNeighborDiscovery()
 		time.Sleep(time.Minute)
 	}
 }
+
+const ReloadPeerList string = "reloaded peer list"
+
 func doNeighborDiscovery() {
-	ctMutex.Lock()
-	clientTemp = make(map[string]Client)
-	ctMutex.Unlock()
+	pltMutex.Lock()
+	peerListTemp = make(map[string]Peer)
+	pltMutex.Unlock()
 	for i := 0; i < 3; i++ {
 		sendNDMessage(settings.NeighborDiscoveryProtocol, settings.BroadcastAddress)
 		time.Sleep(time.Second)
 	}
-	ctMutex.Lock()
-	ClMutex.Lock()
-	if !reflect.DeepEqual(ClientList, clientTemp) {
-		ClientList = clientTemp
-		ClientsChangeNotice <- 1
+	pltMutex.Lock()
+	PlMutex.Lock()
+	if !reflect.DeepEqual(peerList, peerListTemp) {
+		peerList = peerListTemp
+		peersChangeNotice <- ReloadPeerList
 	}
-	ClMutex.Unlock()
-	ctMutex.Unlock()
-	//	for name, _ := range filesystem.Clients {
-	//		_, ok := clientTemp[name]
-	//		if !ok {
-	//			logger.Info("client " + name + " miss")
-	//			filesystem.OnClientMissing(name)
-	//		}
-	//	}
-	//	for name, c := range clientTemp {
-	//		_, ok := filesystem.Clients[name]
-	//		if !ok {
-	//			message, err := client2Json(Client{Username: settings.GetSettings().GetUsername(), Group: settings.GetSettings().GetGroupName()})
-	//			if err != nil {
-	//				logger.Warning(err)
-	//				return
-	//			}
-	//			logger.Info("found a client but do not have its file list, request it")
-	//			messagePipe <- Message{Type: settings.FileSystemRequestProtocol, Destination: c.Addr, Load: message}
-	//		}
-	//	}
-	//	ctMutex.Unlock()
+	PlMutex.Unlock()
+	pltMutex.Unlock()
+
 }
-func sendNDMessage(messageType string, targetAddr string) {
-	message := NDMessage{myself, messageType, targetAddr}
+func sendNDMessage(messageType string, target string) {
+	message := Message{messageType, target}
 	transfer.SendUdpPackage(message)
-	logger.Info("a ndp message has been sent to " + targetAddr)
+	logger.Info("a ndp message has been sent to " + target)
 }
 func genID() {
 	rand.Seed(time.Now().UnixNano())

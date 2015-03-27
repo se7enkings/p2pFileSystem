@@ -6,32 +6,47 @@ import (
 	"github.com/CRVV/p2pFileSystem/settings"
 )
 
-var myself Client = Client{
+var myself Peer = Peer{
 	Username: settings.GetSettings().GetUsername(),
 	ID:       id,
 	Group:    settings.GetSettings().GetGroupName()}
 
-type Client struct {
+type Peer struct {
 	Username string
 	Addr     string `json:"-"`
 	ID       string
 	Group    string
 }
 
-type NDMessage struct {
-	myselfClient Client
-	messageType  string
-	addr         string
+type Message struct {
+	MessageType string
+	Target      string
 }
 
-func (m NDMessage) Type() string {
-	return m.messageType
+func (m Message) Type() string {
+	return m.MessageType
 }
-func (m NDMessage) Destination() string {
-	return m.addr + settings.NeighborDiscoveryPort
+func (m Message) Destination() string {
+	var addr string
+	var port string
+	switch m.MessageType {
+	case settings.NeighborDiscoveryProtocol:
+		port = settings.NeighborDiscoveryPort
+	case settings.NeighborDiscoveryProtocolEcho:
+		port = settings.NeighborDiscoveryPort
+	default:
+		port = settings.CommunicationPort
+	}
+
+	if m.Target == settings.BroadcastAddress {
+		addr = m.Target
+	} else {
+		addr = GetPeerAddr(m.Target)
+	}
+	return addr + port
 }
-func (m NDMessage) Payload() []byte {
-	payload, err := client2Json(m.myselfClient)
+func (m Message) Payload() []byte {
+	payload, err := peer2Json(myself)
 	if err != nil {
 		logger.Warning(err)
 		return nil
@@ -39,13 +54,13 @@ func (m NDMessage) Payload() []byte {
 	return payload
 }
 
-func client2Json(message Client) ([]byte, error) {
+func peer2Json(message Peer) ([]byte, error) {
 	b, err := json.Marshal(message)
 	return b, err
 }
-func json2client(jsonClientMessage []byte) (Client, error) {
-	cm := Client{}
-	err := json.Unmarshal(jsonClientMessage, &cm)
+func json2peer(message []byte) (Peer, error) {
+	cm := Peer{}
+	err := json.Unmarshal(message, &cm)
 	return cm, err
 }
 

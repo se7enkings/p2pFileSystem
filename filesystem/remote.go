@@ -3,7 +3,9 @@ package filesystem
 import (
 	"encoding/json"
 	"github.com/CRVV/p2pFileSystem/logger"
+	"github.com/CRVV/p2pFileSystem/ndp"
 	"github.com/CRVV/p2pFileSystem/settings"
+	"github.com/CRVV/p2pFileSystem/transfer"
 	"sync"
 )
 
@@ -13,13 +15,38 @@ var CMutex sync.Mutex = sync.Mutex{}
 var FileSystemLocal Filesystem
 var FslMutex sync.Mutex = sync.Mutex{}
 
-var MessagePipe chan Message = make(chan Message, 4)
-
 type Client struct {
 	Username   string
 	FileSystem Filesystem
 }
 
+func MaintainClientList() {
+	changeNotice := make(chan string)
+	go ndp.NeighborDiscovery(changeNotice)
+	for {
+		switch name := <-changeNotice; name {
+		case ndp.ReloadPeerList:
+			newPeerList := ndp.GetPeerList()
+			for name, _ := range Clients {
+				_, ok := newPeerList[name]
+				if !ok {
+					logger.Info("client " + name + " miss")
+					onClientMissing(name)
+				}
+			}
+			for name, _ := range newPeerList {
+				_, ok := Clients[name]
+				if !ok {
+					logger.Info("found client " + name + " but do not have its file list, request it")
+					onDiscoverNewClient(name)
+				}
+			}
+		default:
+			onDiscoverNewClient(name)
+		}
+
+	}
+}
 func OnReceiveFilesystem(filesystemMessage []byte) {
 	client, err := Json2Client(filesystemMessage)
 	if err != nil {
@@ -32,22 +59,19 @@ func OnReceiveFilesystem(filesystemMessage []byte) {
 	Init()
 }
 func OnRequestedFilesystem(name string) {
-	FslMutex.Lock()
-	message, err := Client2Json(Client{Username: settings.GetSettings().GetUsername(), FileSystem: FileSystemLocal})
-	FslMutex.Unlock()
-	if err != nil {
-		logger.Warning(err)
-		return
-	}
 	logger.Info("send filesystem to " + name)
-	MessagePipe <- Message{Type: settings.FileSystemListProtocol, DestinationUsername: name, Load: message}
+	transfer.SendTcpMessage(FSMessage{DestinationName: name})
 }
-func OnClientMissing(name string) {
+func onClientMissing(name string) {
 	logger.Info("missing client " + name)
 	CMutex.Lock()
 	delete(Clients, name)
 	CMutex.Unlock()
 	Init()
+}
+func onDiscoverNewClient(name string) {
+	message := ndp.Message{MessageType: settings.FileSystemRequestProtocol, Target: name}
+	transfer.SendTcpMessage(message)
 }
 func GetFile(hash string) {
 
@@ -55,7 +79,6 @@ func GetFile(hash string) {
 func UploadFile(path string) {
 
 }
-
 func Client2Json(fileSystem Client) ([]byte, error) {
 	b, err := json.Marshal(fileSystem)
 	return b, err
