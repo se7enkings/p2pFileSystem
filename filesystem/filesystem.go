@@ -23,19 +23,19 @@ func readLocalFile(folder string) error {
 	go getLocalFiles(folder, "", filesChan)
 
 	for f := range filesChan {
-		// TODO: ioutil.ReadFile cannot handle big file(use too much memory), fix it.
+		// TODO: ioutil.ReadFile cannot handle big file(use too much memory). fix it.
 		fileData, err := ioutil.ReadFile(folder + "/" + f.Path + "/" + f.FileInfo.Name())
 		if err != nil {
 			return err
 		}
 		sha256Sum := sha256.Sum256(fileData)
 		hash := base64.StdEncoding.EncodeToString(sha256Sum[:])
-		fileSystem[hash] = File{
+		fileSystem[hash] = &File{
 			Name:    f.FileInfo.Name(),
 			Path:    f.Path,
 			Size:    f.FileInfo.Size(),
 			AtLocal: true,
-			Owner:   settings.GetSettings().GetUsername()}
+			Owner:   []string{settings.GetSettings().GetUsername()}}
 	}
 	FsMutex.Lock()
 	FileSystem = fileSystem
@@ -91,25 +91,24 @@ func Init() {
 	if Clients == nil {
 		Clients = make(map[string]Client)
 	}
-	for _, c := range Clients {
+	for username, c := range Clients {
 		FsMutex.Lock()
-		FileSystem = appendFilesystem(FileSystem, c.FileSystem)
+		appendFilesystem(FileSystem, c.FileSystem, username)
 		FsMutex.Unlock()
 	}
 	CMutex.Unlock()
 	err = getFileList()
 	logger.Error(err)
 }
-func appendFilesystem(originFileSystem Filesystem, receivedFileSystem Filesystem) Filesystem {
+func appendFilesystem(originFileSystem Filesystem, receivedFileSystem Filesystem, username string) {
 	// because the File.IsLocal is ignored by json, IsLocal in received Filesystem is always default bool value(false).
 	// It is possible that duplicate filename exists in the returned Filesystem(the content is different).
 	for hash, file := range receivedFileSystem {
 		_, ok := originFileSystem[hash]
 		if ok {
-			continue
+			originFileSystem[hash].Owner = append(originFileSystem[hash].Owner, username)
 		} else {
 			originFileSystem[hash] = file
 		}
 	}
-	return originFileSystem
 }

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type Filesystem map[string]File
+type Filesystem map[string]*File
 
 type File struct {
 	Name string // filename, exclude path
@@ -15,7 +15,7 @@ type File struct {
 	Size    int64 // bytes
 	AtLocal bool  `json:"-"`
 	//    BlockHash [][]byte // SHA-256 Hash
-	Owner string
+	Owner []string
 	//	    Permission byte
 }
 

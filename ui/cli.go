@@ -65,7 +65,6 @@ Loop:
 				filesystem.GetFile(file.FileHash)
 				filesystem.Init()
 			}
-			//TODO: complete this command
 		case "rm":
 			name := ""
 			fmt.Scan(&name)
