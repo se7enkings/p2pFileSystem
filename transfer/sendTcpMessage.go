@@ -7,7 +7,7 @@ import (
 	"net"
 )
 
-func SendTcpMessage(message Message, fileData chan []byte) error {
+func SendTcpMessage(message Message) error {
 	addr := message.Destination()
 	messageType := message.Type()
 	payload := message.Payload()
@@ -36,8 +36,5 @@ func SendTcpMessage(message Message, fileData chan []byte) error {
 	conn.Write(payload)
 	logger.Info("sent a " + messageType + " message to " + addr)
 
-	if fileData != nil {
-
-	}
 	return nil
 }

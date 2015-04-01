@@ -75,9 +75,9 @@ func onDiscoverNewClient(name string) {
 	transfer.SendTcpMessage(message)
 }
 func GetFile(hash string) {
-	FsMutex.Lock()
-	fileOwnerList := FileSystem[hash].Owner
-	FsMutex.Unlock()
+//	FsMutex.Lock()
+//	fileOwnerList := FileSystem[hash].Owner
+//	FsMutex.Unlock()
 
 }
 func UploadFile(path string) {
