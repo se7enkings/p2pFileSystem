@@ -54,6 +54,15 @@ func handleTcpConn(conn net.Conn) {
 			ndp.OnReceiveNeighborSolicitationEcho(peer)
 			OnRequestedFilesystem(peer.Username)
 		}
+	case settings.FileBlockRequestProtocol:
+		requestMessage, err := Json2FBRMessage(buff)
+		if err != nil {
+			logger.Warning(err)
+			return
+		}
+		fileData := onRequestedFileBlock(&requestMessage)
+		_, err = conn.Write(fileData)
+		logger.Warning(err)
 	case settings.InvalidUsername:
 		logger.Info("receive a invalidUsername message from " + conn.RemoteAddr().String())
 		onReceiveInvalidUsername()

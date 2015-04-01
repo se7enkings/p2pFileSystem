@@ -71,7 +71,7 @@ func onMissingPeer(peer Peer) {
 func onReceiveNeighborSolicitation(peer Peer) {
 	if peer.Username == settings.GetSettings().GetUsername() {
 		logger.Info("found a peer which have the same username. kick it out!")
-		transfer.SendTcpMessage(IUMessage{peer.Addr})
+		transfer.SendTcpMessage(&IUMessage{peer.Addr})
 	} else {
 		plMutex.Lock()
 		_, ok := peerList[peer.Username]
@@ -128,7 +128,7 @@ func doNeighborDiscovery() {
 }
 func sendNDMessage(messageType string, target string) {
 	message := Message{messageType, target}
-	transfer.SendUdpPackage(message)
+	transfer.SendUdpPackage(&message)
 }
 func genID() {
 	//	logger.Info("generate a new ID")

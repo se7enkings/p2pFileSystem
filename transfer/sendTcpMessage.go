@@ -8,6 +8,12 @@ import (
 )
 
 func SendTcpMessage(message Message) error {
+	return sendMessage(message, nil)
+}
+func TcpConnectionForReceiveFile(message Message, fileData chan []byte) error {
+	return sendMessage(message, fileData)
+}
+func sendMessage(message Message, fileDataChan chan []byte) error {
 	addr := message.Destination()
 	messageType := message.Type()
 	payload := message.Payload()
@@ -36,5 +42,14 @@ func SendTcpMessage(message Message) error {
 	conn.Write(payload)
 	logger.Info("sent a " + messageType + " message to " + addr)
 
+	if fileDataChan != nil {
+		buff = make([]byte, settings.FileBlockSize)
+		size, err := conn.Read(buff)
+		if err != nil {
+			logger.Warning(err)
+			return err
+		}
+		fileDataChan <- buff[:size]
+	}
 	return nil
 }

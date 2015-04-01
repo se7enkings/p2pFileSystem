@@ -22,10 +22,10 @@ type Message struct {
 	Target      string
 }
 
-func (m Message) Type() string {
+func (m *Message) Type() string {
 	return m.MessageType
 }
-func (m Message) Destination() string {
+func (m *Message) Destination() string {
 	var addr string
 
 	if m.Target == settings.BroadcastAddress {
@@ -35,7 +35,7 @@ func (m Message) Destination() string {
 	}
 	return addr
 }
-func (m Message) Payload() []byte {
+func (m *Message) Payload() []byte {
 	payload, err := peer2Json(myself)
 	if err != nil {
 		logger.Warning(err)
@@ -58,13 +58,13 @@ type IUMessage struct {
 	addr string
 }
 
-func (m IUMessage) Type() string {
+func (m *IUMessage) Type() string {
 	return settings.InvalidUsername
 }
-func (m IUMessage) Destination() string {
+func (m *IUMessage) Destination() string {
 	return m.addr
 }
-func (m IUMessage) Payload() []byte {
+func (m *IUMessage) Payload() []byte {
 	return []byte(settings.InvalidUsername)
 }
 

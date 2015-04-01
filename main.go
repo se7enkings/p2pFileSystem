@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	runtime.GOMAXPROCS(4)
+	runtime.GOMAXPROCS(8)
 	defer ndp.OnExit()
 
 	filesystem.Init()
