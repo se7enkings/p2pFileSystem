@@ -135,10 +135,11 @@ func GetFile(hash string) error {
 				logger.Info("block number " + strconv.Itoa(int(blockNum)) + " downloaded but fail")
 				continue
 			}
-			logger.Info("block number " + strconv.Itoa(int(blockNum)) + "complete")
+			logger.Info("block number " + strconv.Itoa(int(blockNum)) + " complete")
 			delete(toBeCompletedBlocks, blockNum)
 		}
 	}
+	tempFile.Sync()
 	tempFile.Close()
 	os.MkdirAll(settings.GetSettings().GetSharePath()+file.Path, 0774)
 	err = os.Rename(settings.GetSettings().GetSharePath()+"/.temp/"+hash, settings.GetSettings().GetSharePath()+file.Path+"/"+file.Name)
@@ -154,7 +155,9 @@ func downloadFileBlock(tempFile *os.File, requestMessage *FBRMessage, completeBl
 		completeBlockNumChan <- -1
 		return
 	}
-	_, err = tempFile.WriteAt(fileData, int64(requestMessage.BlockNum)*settings.FileBlockSize)
+	offset := int64(requestMessage.BlockNum)*settings.FileBlockSize
+	_, err = tempFile.WriteAt(fileData, offset)
+	logger.Info(fmt.Sprintf("write to file at %d, size %d", offset, len(fileData)))
 	if err != nil {
 		completeBlockNumChan <- -1
 		return
@@ -176,7 +179,6 @@ func onRequestedFileBlock(requestMessage *FBRMessage) []byte {
 		return nil
 	}
 	buff := make([]byte, requestMessage.BlockSize)
-	logger.Info(fmt.Sprintf("this block size is %d", requestMessage.BlockSize))
 	_, err = f.ReadAt(buff, int64(requestMessage.BlockNum)*settings.FileBlockSize)
 	if err != nil {
 		logger.Warning(err)

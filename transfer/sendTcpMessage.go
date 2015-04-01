@@ -5,6 +5,8 @@ import (
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"net"
+	"fmt"
+	"io"
 )
 
 func SendTcpMessage(message Message) error {
@@ -44,13 +46,14 @@ func sendMessage(message Message) ([]byte, error) {
 	logger.Info("sent a " + messageType + " message to " + addr)
 
 	if message.Type() == settings.FileBlockRequestProtocol {
-		buff = make([]byte, settings.FileBlockSize)
-		size, err := conn.Read(buff)
-		if err != nil {
+		buffSize := settings.FileBlockSize
+		buff = make([]byte, buffSize)
+		size, err := io.ReadFull(conn, buff)
+		if err != nil && err != io.ErrUnexpectedEOF {
 			logger.Warning(err)
 			return nil, err
 		}
-		logger.Info("receive file complete")
+		logger.Info(fmt.Sprintf("receive %d bytes for this block", size))
 		return buff[:size], nil
 	}
 	return nil, nil
