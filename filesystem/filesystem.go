@@ -29,7 +29,7 @@ func readLocalFile(folder string) error {
 			return err
 		}
 		sha256Sum := sha256.Sum256(fileData)
-		hash := base64.StdEncoding.EncodeToString(sha256Sum[:])
+		hash := base64.URLEncoding.EncodeToString(sha256Sum[:])
 		fileSystem[hash] = &File{
 			Name:    f.FileInfo.Name(),
 			Path:    f.Path,

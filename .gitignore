@@ -29,3 +29,6 @@ p2pFileSystem
 
 # config file
 config.json
+
+# temp file
+test/**/.temp

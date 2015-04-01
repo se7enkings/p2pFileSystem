@@ -164,7 +164,7 @@ func onRequestedFileBlock(requestMessage *FBRMessage) []byte {
 		logger.Warning("I am requested a file but I do not have it")
 		return nil
 	}
-	f, err := os.Open(file.Path + "/" + file.Name)
+	f, err := os.Open(settings.GetSettings().GetSharePath()+file.Path + "/" + file.Name)
 	if err != nil {
 		logger.Warning(err)
 		return nil

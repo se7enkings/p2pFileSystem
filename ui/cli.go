@@ -63,7 +63,6 @@ Loop:
 				fmt.Println("download complete")
 			case !file.AtLocal:
 				filesystem.GetFile(file.FileHash)
-				filesystem.Init()
 			}
 		case "rm":
 			name := ""
