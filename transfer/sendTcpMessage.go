@@ -8,12 +8,13 @@ import (
 )
 
 func SendTcpMessage(message Message) error {
-	return sendMessage(message, nil)
+	_, err := sendMessage(message)
+	return err
 }
-func TcpConnectionForReceiveFile(message Message, fileData chan []byte) error {
-	return sendMessage(message, fileData)
+func TcpConnectionForReceiveFile(message Message) ([]byte, error) {
+	return sendMessage(message)
 }
-func sendMessage(message Message, fileDataChan chan []byte) error {
+func sendMessage(message Message) ([]byte, error) {
 	addr := message.Destination()
 	messageType := message.Type()
 	payload := message.Payload()
@@ -21,13 +22,13 @@ func sendMessage(message Message, fileDataChan chan []byte) error {
 	conn, err := net.Dial("tcp", addr+settings.CommunicationPort)
 	if err != nil {
 		logger.Warning(err)
-		return err
+		return nil, err
 	}
 	defer conn.Close()
 	mType := []byte(messageType)
 	if len(mType) != settings.MessageHeaderSize {
 		logger.Warning("invalid message type")
-		return err
+		return nil, err
 	}
 	conn.Write(mType)
 
@@ -35,22 +36,22 @@ func sendMessage(message Message, fileDataChan chan []byte) error {
 	size := uint32(len(payload))
 	if size > settings.MaxMessageSize {
 		logger.Warning("the message is too long")
-		return err
+		return nil, err
 	}
 	binary.LittleEndian.PutUint32(buff, size)
 	conn.Write(buff)
 	conn.Write(payload)
 	logger.Info("sent a " + messageType + " message to " + addr)
 
-	if fileDataChan != nil {
+	if message.Type() == settings.FileBlockRequestProtocol {
 		buff = make([]byte, settings.FileBlockSize)
 		size, err := conn.Read(buff)
 		if err != nil {
 			logger.Warning(err)
-			return err
+			return nil, err
 		}
-		fileDataChan <- buff[:size]
 		logger.Info("receive file complete")
+		return buff[:size], nil
 	}
-	return nil
+	return nil, nil
 }

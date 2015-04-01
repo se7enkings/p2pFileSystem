@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"fmt"
 )
 
 var Clients map[string]Client
@@ -139,7 +140,8 @@ func GetFile(hash string) error {
 		}
 	}
 	tempFile.Close()
-	err = os.Rename(settings.GetSettings().GetSharePath()+"/.temp/"+hash, file.Path+"/"+file.Name)
+	os.MkdirAll(settings.GetSettings().GetSharePath()+file.Path, 0774)
+	err = os.Rename(settings.GetSettings().GetSharePath()+"/.temp/"+hash, settings.GetSettings().GetSharePath()+file.Path+"/"+file.Name)
 	logger.Warning(err)
 
 	Init()
@@ -147,13 +149,11 @@ func GetFile(hash string) error {
 }
 func downloadFileBlock(tempFile *os.File, requestMessage *FBRMessage, completeBlockNumChan chan int32) {
 	logger.Info("start to download block " + strconv.Itoa(int(requestMessage.BlockNum)))
-	fileDataChan := make(chan []byte)
-	err := transfer.TcpConnectionForReceiveFile(requestMessage, fileDataChan)
+	fileData, err := transfer.TcpConnectionForReceiveFile(requestMessage)
 	if err != nil {
 		completeBlockNumChan <- -1
 		return
 	}
-	fileData := <-fileDataChan
 	_, err = tempFile.WriteAt(fileData, int64(requestMessage.BlockNum)*settings.FileBlockSize)
 	if err != nil {
 		completeBlockNumChan <- -1
@@ -170,13 +170,13 @@ func onRequestedFileBlock(requestMessage *FBRMessage) []byte {
 		logger.Warning("I am requested a file but I do not have it")
 		return nil
 	}
-	logger.Info("I am requested a file and start to send this file")
 	f, err := os.Open(settings.GetSettings().GetSharePath() + file.Path + "/" + file.Name)
 	if err != nil {
 		logger.Warning(err)
 		return nil
 	}
 	buff := make([]byte, requestMessage.BlockSize)
+	logger.Info(fmt.Sprintf("this block size is %d", requestMessage.BlockSize))
 	_, err = f.ReadAt(buff, int64(requestMessage.BlockNum)*settings.FileBlockSize)
 	if err != nil {
 		logger.Warning(err)

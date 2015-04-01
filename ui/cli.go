@@ -7,18 +7,28 @@ import (
 )
 
 func StartCLI() {
-	currentDir := &filesystem.FileList
-	paths := make([]string, 0)
-
+	var currentDir *filesystem.Node
+	var paths []string
 Loop:
 	for {
 		command := ""
 		settingValue := settings.GetSettings()
 		path := ""
+		filesystem.FlMutex.Lock()
+		currentDir = &filesystem.FileList
 		for _, dir := range paths {
+			var ok bool
+			currentDir, ok = currentDir.Children[dir]
+			if !ok {
+				currentDir = &filesystem.FileList
+				paths = nil
+				path = ""
+				break
+			}
 			path += "/"
 			path += dir
 		}
+		filesystem.FlMutex.Unlock()
 		if path == "" {
 			path = "/"
 		}
