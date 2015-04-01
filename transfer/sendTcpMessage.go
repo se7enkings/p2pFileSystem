@@ -50,6 +50,7 @@ func sendMessage(message Message, fileDataChan chan []byte) error {
 			return err
 		}
 		fileDataChan <- buff[:size]
+		logger.Info("receive file complete")
 	}
 	return nil
 }

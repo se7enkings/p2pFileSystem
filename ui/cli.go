@@ -63,6 +63,7 @@ Loop:
 				fmt.Println("download complete")
 			case !file.AtLocal:
 				filesystem.GetFile(file.FileHash)
+				fmt.Println("Download complete")
 			}
 		case "rm":
 			name := ""
@@ -78,6 +79,7 @@ Loop:
 			case !file.IsDir:
 				filesystem.RemoveLocalFile(file.FileHash)
 				filesystem.Init()
+				fmt.Println("remove file complete")
 			}
 		case "help":
 			fmt.Print(HELP)

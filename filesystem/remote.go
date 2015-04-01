@@ -6,6 +6,7 @@ import (
 	"github.com/CRVV/p2pFileSystem/settings"
 	"github.com/CRVV/p2pFileSystem/transfer"
 	"os"
+	"strconv"
 	"sync"
 )
 
@@ -86,7 +87,8 @@ func GetFile(hash string) error {
 	} else {
 		blockCount = int32(file.Size/settings.FileBlockSize + 1)
 	}
-	os.MkdirAll(settings.GetSettings().GetSharePath()+"/.temp", 0774)
+	logger.Info("this file have " + strconv.Itoa(int(blockCount)) + " blocks")
+	os.Mkdir(settings.GetSettings().GetSharePath()+"/.temp", 0774)
 	tempFile, err := os.Create(settings.GetSettings().GetSharePath() + "/.temp/" + hash)
 	if err != nil {
 		logger.Warning(err)
@@ -129,8 +131,10 @@ func GetFile(hash string) error {
 		for i := 0; i < runningRoutines; i++ {
 			blockNum := <-completeBlockNumChan
 			if blockNum < 0 {
+				logger.Info("block number " + strconv.Itoa(int(blockNum)) + " downloaded but fail")
 				continue
 			}
+			logger.Info("block number " + strconv.Itoa(int(blockNum)) + "complete")
 			delete(toBeCompletedBlocks, blockNum)
 		}
 	}
@@ -142,6 +146,7 @@ func GetFile(hash string) error {
 	return nil
 }
 func downloadFileBlock(tempFile *os.File, requestMessage *FBRMessage, completeBlockNumChan chan int32) {
+	logger.Info("start to download block " + strconv.Itoa(int(requestMessage.BlockNum)))
 	fileDataChan := make(chan []byte)
 	err := transfer.TcpConnectionForReceiveFile(requestMessage, fileDataChan)
 	if err != nil {
@@ -155,6 +160,7 @@ func downloadFileBlock(tempFile *os.File, requestMessage *FBRMessage, completeBl
 		return
 	}
 	completeBlockNumChan <- requestMessage.BlockNum
+	logger.Info("download block " + strconv.Itoa(int(requestMessage.BlockNum)) + " complete")
 }
 func onRequestedFileBlock(requestMessage *FBRMessage) []byte {
 	FslMutex.Lock()
@@ -164,7 +170,8 @@ func onRequestedFileBlock(requestMessage *FBRMessage) []byte {
 		logger.Warning("I am requested a file but I do not have it")
 		return nil
 	}
-	f, err := os.Open(settings.GetSettings().GetSharePath()+file.Path + "/" + file.Name)
+	logger.Info("I am requested a file and start to send this file")
+	f, err := os.Open(settings.GetSettings().GetSharePath() + file.Path + "/" + file.Name)
 	if err != nil {
 		logger.Warning(err)
 		return nil

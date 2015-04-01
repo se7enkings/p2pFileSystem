@@ -54,6 +54,9 @@ func (s *Settings) IsIgnored(name string) bool {
 	mutex.Lock()
 	_, ok := s.Ignore[name]
 	mutex.Unlock()
+	if name[0] == '.' {
+		ok = true
+	}
 	return ok
 }
 func (s *Settings) GetIgnoreList() []string {

@@ -55,6 +55,7 @@ func handleTcpConn(conn net.Conn) {
 			OnRequestedFilesystem(peer.Username)
 		}
 	case settings.FileBlockRequestProtocol:
+		logger.Info("receive a fileBlockRequest message from " + conn.RemoteAddr().String())
 		requestMessage, err := Json2FBRMessage(buff)
 		if err != nil {
 			logger.Warning(err)
@@ -63,6 +64,7 @@ func handleTcpConn(conn net.Conn) {
 		fileData := onRequestedFileBlock(&requestMessage)
 		_, err = conn.Write(fileData)
 		logger.Warning(err)
+		logger.Info("send file block complete")
 	case settings.InvalidUsername:
 		logger.Info("receive a invalidUsername message from " + conn.RemoteAddr().String())
 		onReceiveInvalidUsername()
