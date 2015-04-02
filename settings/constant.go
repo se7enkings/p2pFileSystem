@@ -12,7 +12,7 @@ const CommunicationPort = ":1539"
 const NeighborDiscoveryPort = ":1540"
 
 const FileSystemListProtocol = "fslp"
-const FileSystemRequestProtocol = "fsrp"
+const FileListRequestProtocol = "fsrp"
 
 const FileBlockRequestProtocol = "fbrp"
 

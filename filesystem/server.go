@@ -43,7 +43,7 @@ func handleTcpConn(conn net.Conn) {
 	case settings.FileSystemListProtocol:
 		logger.Info("receive a fileSystemList message from " + conn.RemoteAddr().String())
 		OnReceiveFilesystem(buff)
-	case settings.FileSystemRequestProtocol:
+	case settings.FileListRequestProtocol:
 		peer, err := ndp.GetPeerFromJson(buff)
 		if err != nil {
 			logger.Warning(err)
@@ -51,6 +51,7 @@ func handleTcpConn(conn net.Conn) {
 		}
 		if peer.Group == settings.GetSettings().GetGroupName() {
 			logger.Info("receive a fileSystemRequest message from " + conn.RemoteAddr().String())
+			//TODO
 			ndp.OnReceiveNeighborSolicitationEcho(peer)
 			OnRequestedFilesystem(peer.Username)
 		}

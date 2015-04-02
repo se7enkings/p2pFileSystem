@@ -2,11 +2,11 @@ package transfer
 
 import (
 	"encoding/binary"
+	"fmt"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
-	"net"
-	"fmt"
 	"io"
+	"net"
 )
 
 func SendTcpMessage(message Message) error {

@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"fmt"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/ndp"
 	"github.com/CRVV/p2pFileSystem/settings"
@@ -8,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"fmt"
 )
 
 var Clients map[string]Client
@@ -73,7 +73,7 @@ func onClientMissing(name string) {
 	Init()
 }
 func onDiscoverNewClient(name string) {
-	message := ndp.Message{MessageType: settings.FileSystemRequestProtocol, Target: name}
+	message := ndp.Message{MessageType: settings.FileListRequestProtocol, Target: name}
 	transfer.SendTcpMessage(&message)
 }
 func GetFile(hash string) error {
@@ -118,6 +118,7 @@ func GetFile(hash string) error {
 				requestMessage.BlockSize = lastBlockSize
 			}
 
+			//TODO: need thread pool
 			go downloadFileBlock(tempFile, &requestMessage, completeBlockNumChan)
 			runningRoutines++
 
@@ -155,7 +156,7 @@ func downloadFileBlock(tempFile *os.File, requestMessage *FBRMessage, completeBl
 		completeBlockNumChan <- -1
 		return
 	}
-	offset := int64(requestMessage.BlockNum)*settings.FileBlockSize
+	offset := int64(requestMessage.BlockNum) * settings.FileBlockSize
 	_, err = tempFile.WriteAt(fileData, offset)
 	logger.Info(fmt.Sprintf("write to file at %d, size %d", offset, len(fileData)))
 	if err != nil {
@@ -177,6 +178,9 @@ func onRequestedFileBlock(requestMessage *FBRMessage) []byte {
 	if err != nil {
 		logger.Warning(err)
 		return nil
+	}
+	if requestMessage.BlockSize > settings.FileBlockSize {
+		panic(requestMessage.BlockSize)
 	}
 	buff := make([]byte, requestMessage.BlockSize)
 	_, err = f.ReadAt(buff, int64(requestMessage.BlockNum)*settings.FileBlockSize)
