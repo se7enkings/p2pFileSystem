@@ -3,9 +3,11 @@ package filesystem
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/ndp"
 	"github.com/CRVV/p2pFileSystem/settings"
+	"io"
 	"net"
 )
 
@@ -37,7 +39,9 @@ func handleTcpConn(conn net.Conn) {
 	size := binary.LittleEndian.Uint32(buff)
 
 	buff = make([]byte, size)
-	conn.Read(buff)
+	messageSize, err := io.ReadFull(conn, buff)
+	logger.Warning(err)
+	logger.Info(fmt.Sprintf("%d bytes read", messageSize))
 
 	switch messageType {
 	case settings.FileSystemListProtocol:

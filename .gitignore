@@ -31,4 +31,4 @@ p2pFileSystem
 config.json
 
 # temp file
-test/**/.temp
+test/ShareFolder

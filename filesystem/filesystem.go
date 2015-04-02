@@ -103,6 +103,7 @@ func Init() {
 func appendFilesystem(originFileSystem Filesystem, receivedFileSystem Filesystem, username string) {
 	// because the File.IsLocal is ignored by json, IsLocal in received Filesystem is always default bool value(false).
 	// It is possible that duplicate filename exists in the returned Filesystem(the content is different).
+	logger.Info("appedn filesystem begin")
 	for hash, file := range receivedFileSystem {
 		_, ok := originFileSystem[hash]
 		if ok {
@@ -111,4 +112,5 @@ func appendFilesystem(originFileSystem Filesystem, receivedFileSystem Filesystem
 			originFileSystem[hash] = file
 		}
 	}
+	logger.Info("appedn filesystem end")
 }

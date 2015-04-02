@@ -22,7 +22,7 @@ func GetSettings() *Settings {
 	if settings.Username == "" {
 		configFile, err := ioutil.ReadFile("config.json")
 		if err != nil {
-			settings = Settings{"crvv", "Group", "test/testLocalFolder", make(map[string]int)}
+			settings = Settings{"crvv", "Group", "test/ShareFolder", make(map[string]int)}
 			settings.saveSettings()
 		} else {
 			settings = Settings{}
