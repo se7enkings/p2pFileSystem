@@ -8,7 +8,7 @@ import (
 	"github.com/CRVV/p2pFileSystem/transfer"
 )
 
-var clients ClientList
+var clients ClientList = ClientList{M: make(map[string]filesystem.Filesystem)}
 
 func MaintainClientList() {
 	changeNotice := make(chan ndp.PeerListNotice)
