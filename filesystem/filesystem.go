@@ -57,7 +57,7 @@ func appendFilesystem(originFileSystem Filesystem, receivedFileSystem Filesystem
 	for hash, file := range receivedFileSystem.M {
 		_, ok := originFileSystem.M[hash]
 		if !ok {
-			*originFileSystem.M[hash] = *file
+			originFileSystem.M[hash] = file
 			originFileSystem.M[hash].Owners = make(map[string]bool)
 		}
 		// this if is unnecessary
