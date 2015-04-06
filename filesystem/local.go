@@ -33,6 +33,7 @@ func readLocalFile() (map[string]*File, error) {
 }
 func getFileHash(name string) ([]byte, error) {
 	file, err := os.Open(name)
+	defer file.Close()
 	if err != nil {
 		return nil, err
 	}
