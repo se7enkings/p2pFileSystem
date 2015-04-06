@@ -1,25 +1,18 @@
 package ndp
 
 import (
-	"encoding/base64"
 	"encoding/binary"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"github.com/CRVV/p2pFileSystem/transfer"
-	"math/rand"
 	"net"
-	"sync"
 	"time"
 )
 
 var peersChangeNotice chan PeerListNotice
 
-var peerList map[string]Peer = make(map[string]Peer)
-var plMutex sync.Mutex = sync.Mutex{}
-
-var peerListTemp map[string]Peer = make(map[string]Peer) // key: Username
-var pltMutex sync.Mutex = sync.Mutex{}
-var id string
+var peerList peerTable = peerTable{m: make(map[string]Peer)}
+var peerListTemp peerTable = peerTable{m: make(map[string]Peer)}
 
 func OnExit() {
 	sendNDMessage(settings.GoodByeProtocol, settings.BroadcastAddress)
@@ -47,7 +40,7 @@ func StartNeighborDiscoveryServer() {
 			logger.Warning(err)
 			continue
 		}
-		if peer.Group != settings.GetSettings().GetGroupName() || peer.ID == id {
+		if peer.Group != settings.GetSettings().GetGroupName() || peer.ID == myself.ID {
 			continue
 		}
 		peer.Addr, _, _ = net.SplitHostPort(remoteAddr.String())
@@ -104,7 +97,6 @@ func OnReceiveNeighborSolicitationEcho(peer Peer) {
 }
 func NeighborDiscovery(notice chan PeerListNotice) {
 	peersChangeNotice = notice
-	genID()
 	for {
 		doNeighborDiscovery()
 		time.Sleep(time.Minute)
@@ -129,14 +121,4 @@ func doNeighborDiscovery() {
 func sendNDMessage(messageType string, target string) {
 	message := Message{messageType, target}
 	transfer.SendUdpPackage(&message)
-}
-func genID() {
-	//	logger.Info("generate a new ID")
-	rand.Seed(time.Now().UnixNano())
-	idd := make([]byte, 16)
-	for i, _ := range idd {
-		idd[i] = byte(rand.Intn(256))
-	}
-	id = base64.StdEncoding.EncodeToString(idd)
-	myself.ID = id
 }

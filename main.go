@@ -12,9 +12,10 @@ func main() {
 	defer ndp.OnExit()
 
 	filesystem.Init()
+	ndp.Init()
 
-	go ndp.StartNeighborDiscoveryServer()
 	go filesystem.MaintainClientList()
+	go ndp.StartNeighborDiscoveryServer()
 
 	go filesystem.StartFilesystemServer()
 

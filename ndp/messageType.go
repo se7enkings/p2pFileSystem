@@ -1,21 +1,9 @@
 package ndp
 
 import (
-	"encoding/json"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
 )
-
-var myself Peer = Peer{
-	Username: settings.GetSettings().GetUsername(),
-	Group:    settings.GetSettings().GetGroupName()}
-
-type Peer struct {
-	Username string
-	Addr     string `json:"-"`
-	ID       string
-	Group    string
-}
 
 type Message struct {
 	MessageType string
@@ -44,16 +32,6 @@ func (m *Message) Payload() []byte {
 	return payload
 }
 
-func peer2Json(message Peer) ([]byte, error) {
-	b, err := json.Marshal(message)
-	return b, err
-}
-func json2peer(message []byte) (Peer, error) {
-	cm := Peer{}
-	err := json.Unmarshal(message, &cm)
-	return cm, err
-}
-
 type IUMessage struct {
 	addr string
 }
@@ -66,13 +44,4 @@ func (m *IUMessage) Destination() string {
 }
 func (m *IUMessage) Payload() []byte {
 	return []byte(settings.InvalidUsername)
-}
-
-const ReloadPeerListNotice int = 1
-const NewPeerNotice int = 2
-const PeerMissingNotice int = 3
-
-type PeerListNotice struct {
-	NoticeType int
-	PeerName   string
 }

@@ -5,7 +5,8 @@ import (
 	"encoding/base64"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
-	"io/ioutil"
+	"io"
+	"os"
 	"strings"
 	"sync"
 )
@@ -23,12 +24,10 @@ func readLocalFile(folder string) error {
 	go getLocalFiles(folder, "", filesChan)
 
 	for f := range filesChan {
-		// TODO: ioutil.ReadFile cannot handle big file(use too much memory). fix it.
-		fileData, err := ioutil.ReadFile(folder + "/" + f.Path + "/" + f.FileInfo.Name())
+		sha256Sum, err := getFileHash(folder + "/" + f.Path + "/" + f.FileInfo.Name())
 		if err != nil {
 			return err
 		}
-		sha256Sum := sha256.Sum256(fileData)
 		hash := base64.URLEncoding.EncodeToString(sha256Sum[:])
 		fileSystem[hash] = &File{
 			Name:    f.FileInfo.Name(),
@@ -45,8 +44,20 @@ func readLocalFile(folder string) error {
 	FslMutex.Unlock()
 	return nil
 }
+func getFileHash(name string) ([]byte, error) {
+	file, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	hasher := sha256.New()
+	_, err = io.Copy(hasher, file)
+	if err != nil {
+		return nil, err
+	}
+	return hasher.Sum(nil), nil
+}
 
-func getFileList() error {
+func generateFileList() error {
 	fileList := Node{"root", true, true, 0, "", make(map[string]*Node)}
 	fileList.Children[".."] = &fileList
 	FsMutex.Lock()
@@ -97,7 +108,7 @@ func Init() {
 		FsMutex.Unlock()
 	}
 	CMutex.Unlock()
-	err = getFileList()
+	err = generateFileList()
 	logger.Error(err)
 }
 func appendFilesystem(originFileSystem Filesystem, receivedFileSystem Filesystem, username string) {
