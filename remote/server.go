@@ -55,6 +55,7 @@ func handleTcpConn(conn net.Conn) {
 		}
 		if peer.Group == settings.GetSettings().GetGroupName() {
 			logger.Info("receive a fileSystemRequest message from " + conn.RemoteAddr().String())
+			peer.Addr, _, _ = net.SplitHostPort(conn.RemoteAddr().String())
 			ndp.OnReceiveNeighborSolicitationEcho(peer)
 			onRequestedFilesystem(peer.Username)
 		}

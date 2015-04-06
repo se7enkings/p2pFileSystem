@@ -6,9 +6,9 @@ import (
 )
 
 func RemoveLocalFile(fileHash string) {
-	filesystemRemote.RLock()
-	file := filesystemRemote.M[fileHash]
-	filesystemRemote.RUnlock()
+	filesystemLocal.RLock()
+	file := filesystemLocal.M[fileHash]
+	filesystemLocal.RUnlock()
 	name := settings.GetSettings().GetSharePath() + file.Path + "/" + file.Name
 	os.Remove(name)
 	RefreshLocalFile()

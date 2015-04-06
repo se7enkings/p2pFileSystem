@@ -2,6 +2,7 @@ package ndp
 
 import (
 	"encoding/binary"
+	"fmt"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"github.com/CRVV/p2pFileSystem/transfer"
@@ -55,13 +56,14 @@ func StartNeighborDiscoveryServer() {
 	}
 }
 func onMissingPeer(peer Peer) {
-	logger.Info("receive goodbye from " + peer.Username)
+	logger.Info(fmt.Sprintf("receive goodbye from %s", peer.Addr))
 	peerList.Lock()
 	delete(peerList.M, peer.Username)
 	peerList.Unlock()
 	peersChangeNotice <- PeerListNotice{NoticeType: PeerMissingNotice, PeerName: peer.Username}
 }
 func onReceiveNeighborSolicitation(peer Peer) {
+	logger.Info(fmt.Sprintf("receive ndp message from %s", peer.Addr))
 	if peer.Username == settings.GetSettings().GetUsername() {
 		logger.Info("found a peer which have the same username. kick it out!")
 		transfer.SendTcpMessage(&IUMessage{peer.Addr})
@@ -70,7 +72,6 @@ func onReceiveNeighborSolicitation(peer Peer) {
 		_, ok := peerList.M[peer.Username]
 		peerList.RUnlock()
 		if !ok {
-			logger.Info("receive neighbor solicitation message from an unknown client " + peer.Username)
 			peerList.Lock()
 			peerList.M[peer.Username] = peer
 			peerList.Unlock()
@@ -83,11 +84,11 @@ func onReceiveNeighborSolicitation(peer Peer) {
 	}
 }
 func OnReceiveNeighborSolicitationEcho(peer Peer) {
+	logger.Info(fmt.Sprintf("receive ndp echo from %s", peer.Addr))
 	peerList.RLock()
 	_, ok := peerList.M[peer.Username]
 	peerList.RUnlock()
 	if !ok {
-		logger.Info("found a new peer from " + peer.Addr)
 		peerList.Lock()
 		peerList.M[peer.Username] = peer
 		peerList.Unlock()

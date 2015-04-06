@@ -20,5 +20,6 @@ func main() {
 
 	go remote.StartFilesystemServer()
 
+	go ui.StartGuiServer()
 	ui.StartCLI()
 }
