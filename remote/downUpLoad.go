@@ -102,7 +102,7 @@ func downloadFileBlock(tempFile *os.File, requestMessage *FBRMessage, completeBl
 	logger.Info("download block " + strconv.Itoa(int(requestMessage.BlockNum)) + " complete")
 }
 func onRequestedFileBlock(requestMessage *FBRMessage) []byte {
-	name, path, _, _, err := filesystem.GetRemoteFile(requestMessage.FileHash)
+	name, path, _, _, err := filesystem.GetLocalFile(requestMessage.FileHash)
 	if err != nil {
 		logger.Warning("I am requested a file but I do not have it")
 		return nil
@@ -113,8 +113,8 @@ func onRequestedFileBlock(requestMessage *FBRMessage) []byte {
 		return nil
 	}
 	if requestMessage.BlockSize > settings.FileBlockSize {
-		//TODO: should not panic
-		panic(requestMessage.BlockSize)
+		logger.Warning(fmt.Sprintf("I am requested a too big block and its size is %d bytes", requestMessage.BlockSize))
+		return nil
 	}
 	buff := make([]byte, requestMessage.BlockSize)
 	_, err = f.ReadAt(buff, int64(requestMessage.BlockNum)*settings.FileBlockSize)

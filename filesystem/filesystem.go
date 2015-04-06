@@ -37,6 +37,22 @@ func GetRemoteFile(hash string) (name string, path string, size int64, owners []
 	}
 	return
 }
+func GetLocalFile(hash string) (name string, path string, size int64, owners []string, err error) {
+	filesystemLocal.RLock()
+	defer filesystemLocal.RUnlock()
+	file, ok := filesystemLocal.M[hash]
+	if !ok {
+		err = errors.New("no such file")
+		return
+	}
+	name = file.Name
+	path = file.Path
+	size = file.Size
+	for owner, _ := range file.Owners {
+		owners = append(owners, owner)
+	}
+	return
+}
 func RefreshRemoteFile(clients map[string]Filesystem) {
 	filesystemRemote.Lock()
 	filesystemRemote.M = make(map[string]*File)

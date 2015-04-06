@@ -1,12 +1,12 @@
 package remote
 
 import (
+	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/ndp"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"github.com/CRVV/p2pFileSystem/transfer"
-	"fmt"
 )
 
 var clients ClientList = ClientList{M: make(map[string]filesystem.Filesystem)}
