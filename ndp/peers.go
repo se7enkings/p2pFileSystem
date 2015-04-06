@@ -3,6 +3,7 @@ package ndp
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"math/rand"
 	"sync"
@@ -14,10 +15,14 @@ var myself Peer
 func GetPeerList() *peerTable {
 	return &peerList
 }
-func GetPeerAddr(name string) string {
+func GetPeerAddr(name string) (string, error) {
 	peerList.RLock()
 	defer peerList.RUnlock()
-	return peerList.M[name].Addr
+	_, ok := peerList.M[name]
+	if ok {
+		return peerList.M[name].Addr, nil
+	}
+	return "", errors.New("requested address of an unknown peer")
 }
 func GetPeerFromJson(message []byte) (Peer, error) {
 	peer, err := json2peer(message)

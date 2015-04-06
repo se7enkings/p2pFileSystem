@@ -1,6 +1,7 @@
 package settings
 
 const MaxMessageSize = ^uint32(0)
+const MaxDownloadThreads = 4
 
 //const BlockSize = 4194304 // 4 M
 const MessageHeaderSize = 4

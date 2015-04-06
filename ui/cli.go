@@ -1,10 +1,13 @@
 package ui
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/remote"
 	"github.com/CRVV/p2pFileSystem/settings"
+	"os"
+	"strings"
 )
 
 func StartCLI() {
@@ -12,7 +15,6 @@ func StartCLI() {
 	var paths []string
 Loop:
 	for {
-		command := ""
 		settingValue := settings.GetSettings()
 		path := ""
 		fileList := filesystem.GetFileList()
@@ -35,8 +37,15 @@ Loop:
 			path = "/"
 		}
 		fmt.Printf("%s@%s %s --> ", settingValue.GetUsername(), settingValue.GetGroupName(), path)
-		fmt.Scan(&command)
-		switch command {
+
+		cmdReader := bufio.NewReaderSize(os.Stdin, 128)
+		cmd, _, _ := cmdReader.ReadLine()
+		command := strings.Split(string(cmd), " ")
+		name := ""
+		if len(command) > 1 {
+			name = command[1]
+		}
+		switch command[0] {
 		case "ls":
 			fmt.Println(filesystem.Node2str(currentDir, 0, false))
 		case "lstree":
@@ -44,8 +53,6 @@ Loop:
 			fmt.Println(fileList.N)
 			fileList.RUnlock()
 		case "cd":
-			name := ""
-			fmt.Scan(&name)
 			newDir, ok := currentDir.Children[name]
 			switch {
 			case name == ".":
@@ -63,8 +70,6 @@ Loop:
 				fmt.Printf("no such file or directory: %s\n", name)
 			}
 		case "get":
-			name := ""
-			fmt.Scan(&name)
 			file, ok := currentDir.Children[name]
 			switch {
 			case !ok:
@@ -78,8 +83,6 @@ Loop:
 				fmt.Println("Download complete")
 			}
 		case "rm":
-			name := ""
-			fmt.Scan(&name)
 			file, ok := currentDir.Children[name]
 			switch {
 			case !ok:
@@ -97,7 +100,9 @@ Loop:
 		case "exit":
 			break Loop
 		default:
-			fmt.Printf("command not found: %s\n", command)
+			if command[0] != "" {
+				fmt.Printf("command not found: %s\n", command[0])
+			}
 		}
 	}
 }

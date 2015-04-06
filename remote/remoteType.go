@@ -26,7 +26,9 @@ func (m *FSMessage) Type() string {
 	return settings.FileSystemListProtocol
 }
 func (m *FSMessage) Destination() string {
-	return ndp.GetPeerAddr(m.DestinationName)
+	addr, err := ndp.GetPeerAddr(m.DestinationName)
+	logger.Error(err)
+	return addr
 }
 func (m *FSMessage) Payload() []byte {
 	fsl := filesystem.GetLocalFilesystemForSend()
@@ -62,7 +64,9 @@ func (m *FBRMessage) Type() string {
 	return settings.FileBlockRequestProtocol
 }
 func (m *FBRMessage) Destination() string {
-	return ndp.GetPeerAddr(m.DestinationName)
+	addr, err := ndp.GetPeerAddr(m.DestinationName)
+	logger.Error(err)
+	return addr
 }
 func (m *FBRMessage) Payload() []byte {
 	message, err := Struct2Json(m)

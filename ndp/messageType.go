@@ -19,7 +19,9 @@ func (m *Message) Destination() string {
 	if m.Target == settings.BroadcastAddress {
 		addr = m.Target
 	} else {
-		addr = GetPeerAddr(m.Target)
+		var err error
+		addr, err = GetPeerAddr(m.Target)
+		logger.Error(err)
 	}
 	return addr
 }
