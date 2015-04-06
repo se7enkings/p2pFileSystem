@@ -1,4 +1,4 @@
-package filesystem
+package remote
 
 import (
 	"encoding/binary"
@@ -46,7 +46,7 @@ func handleTcpConn(conn net.Conn) {
 	switch messageType {
 	case settings.FileSystemListProtocol:
 		logger.Info("receive a fileSystemList message from " + conn.RemoteAddr().String())
-		OnReceiveFilesystem(buff)
+		onReceiveFilesystem(buff)
 	case settings.FileListRequestProtocol:
 		peer, err := ndp.GetPeerFromJson(buff)
 		if err != nil {
@@ -56,7 +56,7 @@ func handleTcpConn(conn net.Conn) {
 		if peer.Group == settings.GetSettings().GetGroupName() {
 			logger.Info("receive a fileSystemRequest message from " + conn.RemoteAddr().String())
 			ndp.OnReceiveNeighborSolicitationEcho(peer)
-			OnRequestedFilesystem(peer.Username)
+			onRequestedFilesystem(peer.Username)
 		}
 	case settings.FileBlockRequestProtocol:
 		logger.Info("receive a fileBlockRequest message from " + conn.RemoteAddr().String())

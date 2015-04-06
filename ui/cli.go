@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
+	"github.com/CRVV/p2pFileSystem/remote"
 	"github.com/CRVV/p2pFileSystem/settings"
 )
 
@@ -14,13 +15,14 @@ Loop:
 		command := ""
 		settingValue := settings.GetSettings()
 		path := ""
-		filesystem.FlMutex.Lock()
-		currentDir = &filesystem.FileList
+		fileList := filesystem.GetFileList()
+		fileList.RLock()
+		currentDir = fileList.N
 		for _, dir := range paths {
 			var ok bool
 			currentDir, ok = currentDir.Children[dir]
 			if !ok {
-				currentDir = &filesystem.FileList
+				currentDir = fileList.N
 				paths = nil
 				path = ""
 				break
@@ -28,7 +30,7 @@ Loop:
 			path += "/"
 			path += dir
 		}
-		filesystem.FlMutex.Unlock()
+		fileList.RUnlock()
 		if path == "" {
 			path = "/"
 		}
@@ -38,9 +40,9 @@ Loop:
 		case "ls":
 			fmt.Println(filesystem.Node2str(currentDir, 0, false))
 		case "lstree":
-			filesystem.FlMutex.Lock()
-			fmt.Println(filesystem.FileList)
-			filesystem.FlMutex.Unlock()
+			fileList.RLock()
+			fmt.Println(fileList.N)
+			fileList.RUnlock()
 		case "cd":
 			name := ""
 			fmt.Scan(&name)
@@ -72,7 +74,7 @@ Loop:
 			case file.AtLocal:
 				fmt.Println("download complete")
 			case !file.AtLocal:
-				filesystem.GetFile(file.FileHash)
+				remote.DownloadFile(file.FileHash)
 				fmt.Println("Download complete")
 			}
 		case "rm":
@@ -88,7 +90,6 @@ Loop:
 				fmt.Printf("not a local file: %s\n", name)
 			case !file.IsDir:
 				filesystem.RemoveLocalFile(file.FileHash)
-				filesystem.Init()
 				fmt.Println("remove file complete")
 			}
 		case "help":

@@ -4,9 +4,17 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 )
 
-type Filesystem map[string]*File
+type Filesystem struct {
+	M            map[string]*File
+	sync.RWMutex `json:"-"`
+}
+type FileList struct { // file list for ui
+	N *Node
+	sync.RWMutex
+}
 
 type File struct {
 	Name string // filename, exclude path
@@ -15,7 +23,7 @@ type File struct {
 	Size    int64 // bytes
 	AtLocal bool  `json:"-"`
 	//    BlockHash [][]byte // SHA-256 Hash
-	Owner []string
+	Owners map[string]bool `json:"-"`
 	//	    Permission byte
 }
 

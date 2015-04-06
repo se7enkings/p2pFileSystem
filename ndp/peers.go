@@ -11,15 +11,13 @@ import (
 
 var myself Peer
 
-func GetPeerList() map[string]Peer {
-	plMutex.Lock()
-	defer plMutex.Unlock()
-	return peerList
+func GetPeerList() *peerTable {
+	return &peerList
 }
 func GetPeerAddr(name string) string {
 	peerList.RLock()
-	defer peerList.Unlock()
-	return peerList.m[name].Addr
+	defer peerList.RUnlock()
+	return peerList.M[name].Addr
 }
 func GetPeerFromJson(message []byte) (Peer, error) {
 	peer, err := json2peer(message)
@@ -27,8 +25,8 @@ func GetPeerFromJson(message []byte) (Peer, error) {
 }
 
 type peerTable struct {
-	m map[string]Peer //key: Username
-	l sync.RWMutex
+	M map[string]Peer //key: Username
+	sync.RWMutex
 }
 type Peer struct {
 	Username string
@@ -42,7 +40,7 @@ const NewPeerNotice int = 2
 const PeerMissingNotice int = 3
 
 type PeerListNotice struct {
-	NoticeType uint8
+	NoticeType int
 	PeerName   string
 }
 

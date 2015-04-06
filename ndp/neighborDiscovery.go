@@ -11,8 +11,8 @@ import (
 
 var peersChangeNotice chan PeerListNotice
 
-var peerList peerTable = peerTable{m: make(map[string]Peer)}
-var peerListTemp peerTable = peerTable{m: make(map[string]Peer)}
+var peerList peerTable = peerTable{M: make(map[string]Peer)}
+var peerListTemp peerTable = peerTable{M: make(map[string]Peer)}
 
 func OnExit() {
 	sendNDMessage(settings.GoodByeProtocol, settings.BroadcastAddress)
@@ -56,9 +56,9 @@ func StartNeighborDiscoveryServer() {
 }
 func onMissingPeer(peer Peer) {
 	logger.Info("receive goodbye from " + peer.Username)
-	plMutex.Lock()
-	delete(peerList, peer.Username)
-	plMutex.Unlock()
+	peerList.Lock()
+	delete(peerList.M, peer.Username)
+	peerList.Unlock()
 	peersChangeNotice <- PeerListNotice{NoticeType: PeerMissingNotice, PeerName: peer.Username}
 }
 func onReceiveNeighborSolicitation(peer Peer) {
@@ -66,13 +66,15 @@ func onReceiveNeighborSolicitation(peer Peer) {
 		logger.Info("found a peer which have the same username. kick it out!")
 		transfer.SendTcpMessage(&IUMessage{peer.Addr})
 	} else {
-		plMutex.Lock()
-		_, ok := peerList[peer.Username]
+		peerList.RLock()
+		_, ok := peerList.M[peer.Username]
+		peerList.RUnlock()
 		if !ok {
 			logger.Info("receive neighbor solicitation message from an unknown client " + peer.Username)
-			peerList[peer.Username] = peer
+			peerList.Lock()
+			peerList.M[peer.Username] = peer
+			peerList.Unlock()
 		}
-		plMutex.Unlock()
 		sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
 		time.Sleep(time.Millisecond * 100)
 		if !ok {
@@ -81,19 +83,23 @@ func onReceiveNeighborSolicitation(peer Peer) {
 	}
 }
 func OnReceiveNeighborSolicitationEcho(peer Peer) {
-	plMutex.Lock()
-	_, ok := peerList[peer.Username]
+	peerList.RLock()
+	_, ok := peerList.M[peer.Username]
+	peerList.RUnlock()
 	if !ok {
-		peerList[peer.Username] = peer
 		logger.Info("found a new peer from " + peer.Addr)
+		peerList.Lock()
+		peerList.M[peer.Username] = peer
+		peerList.Unlock()
 	}
-	plMutex.Unlock()
-	pltMutex.Lock()
-	_, ok = peerListTemp[peer.Username]
+	peerListTemp.RLock()
+	_, ok = peerListTemp.M[peer.Username]
+	peerListTemp.RUnlock()
 	if !ok {
-		peerListTemp[peer.Username] = peer
+		peerListTemp.Lock()
+		peerListTemp.M[peer.Username] = peer
+		peerListTemp.Unlock()
 	}
-	pltMutex.Unlock()
 }
 func NeighborDiscovery(notice chan PeerListNotice) {
 	peersChangeNotice = notice
@@ -104,19 +110,17 @@ func NeighborDiscovery(notice chan PeerListNotice) {
 }
 
 func doNeighborDiscovery() {
-	pltMutex.Lock()
-	peerListTemp = make(map[string]Peer)
-	pltMutex.Unlock()
 	for i := 0; i < 3; i++ {
 		sendNDMessage(settings.NeighborDiscoveryProtocol, settings.BroadcastAddress)
 		time.Sleep(time.Second)
 	}
-	pltMutex.Lock()
-	plMutex.Lock()
+	peerListTemp.Lock()
+	peerList.Lock()
 	peerList = peerListTemp
+	peerListTemp.M = make(map[string]Peer)
+	peerList.Unlock()
+	peerListTemp.Unlock()
 	peersChangeNotice <- PeerListNotice{NoticeType: ReloadPeerListNotice}
-	plMutex.Unlock()
-	pltMutex.Unlock()
 }
 func sendNDMessage(messageType string, target string) {
 	message := Message{messageType, target}

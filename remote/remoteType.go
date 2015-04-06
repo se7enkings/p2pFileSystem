@@ -1,11 +1,22 @@
-package filesystem
+package remote
 
 import (
 	"encoding/json"
+	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/ndp"
 	"github.com/CRVV/p2pFileSystem/settings"
+	"sync"
 )
+
+type Client struct {
+	Username   string
+	FileSystem filesystem.Filesystem
+}
+type ClientList struct {
+	M map[string]filesystem.Filesystem
+	sync.RWMutex
+}
 
 type FSMessage struct {
 	DestinationName string
@@ -18,10 +29,11 @@ func (m *FSMessage) Destination() string {
 	return ndp.GetPeerAddr(m.DestinationName)
 }
 func (m *FSMessage) Payload() []byte {
-	FslMutex.Lock()
-	myself := Client{Username: settings.GetSettings().GetUsername(), FileSystem: FileSystemLocal}
+	fsl := filesystem.GetLocalFilesystemForSend()
+	fsl.RLock()
+	defer fsl.RUnlock()
+	myself := Client{Username: settings.GetSettings().GetUsername(), FileSystem: *fsl}
 	message, err := Struct2Json(&myself)
-	FslMutex.Unlock()
 	if err != nil {
 		logger.Warning(err)
 		return nil
