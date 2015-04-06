@@ -6,6 +6,7 @@ import (
 	"github.com/CRVV/p2pFileSystem/ndp"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"github.com/CRVV/p2pFileSystem/transfer"
+	"fmt"
 )
 
 var clients ClientList = ClientList{M: make(map[string]filesystem.Filesystem)}
@@ -22,7 +23,7 @@ func MaintainClientList() {
 			for name, _ := range clients.M {
 				_, ok := newPeerList.M[name]
 				if !ok {
-					logger.Info("client " + name + " miss")
+					logger.Info(fmt.Sprintf("miss client %s", name))
 					onClientMissing(name)
 				}
 			}
