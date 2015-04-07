@@ -1,13 +1,25 @@
 package filesystem
 
-import "strings"
+import (
+	"encoding/json"
+	"github.com/CRVV/p2pFileSystem/logger"
+	"strings"
+)
 
 func GetFileList() *FileList {
 	return &fileList
 }
+func GetFileListJson() []byte {
+	fileList.RLock()
+	b, err := json.Marshal(fileList)
+	fileList.RUnlock()
+	logger.Warning(err)
+	return b
+}
 func generateFileList() *Node {
 	fileListTemp := Node{"root", true, true, 0, "", make(map[string]*Node)}
-	fileListTemp.Children[".."] = &fileListTemp
+    //TODO: delete this line for json
+//	fileListTemp.Children[".."] = &fileListTemp
 	filesystemLocal.RLock()
 	for fileHash, file := range filesystemLocal.M {
 		addFileToList(&fileListTemp, fileHash, file)
@@ -51,7 +63,8 @@ func doCreateFolder(rootFolder *Node, folders []string) *Node {
 	_, ok := rootFolder.Children[folders[0]]
 	if !ok && folders[0] != "" {
 		rootFolder.Children[folders[0]] = &Node{folders[0], true, true, 0, "", make(map[string]*Node)}
-		rootFolder.Children[folders[0]].Children[".."] = rootFolder
+        //TODO: delete this for json
+//		rootFolder.Children[folders[0]].Children[".."] = rootFolder
 	}
 	if len(folders) > 1 {
 		return doCreateFolder(rootFolder.Children[folders[0]], folders[1:])

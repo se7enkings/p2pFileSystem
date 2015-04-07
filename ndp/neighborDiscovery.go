@@ -26,7 +26,7 @@ func StartNeighborDiscoveryServer() {
 	logger.Error(err)
 	defer conn.Close()
 	for {
-		buff := make([]byte, settings.NeighborDiscoveryMessageBufferSize)
+		buff := make([]byte, settings.MessageBufferSize)
 		_, remoteAddr, err := conn.ReadFromUDP(buff)
 		if err != nil {
 			logger.Warning(err)
