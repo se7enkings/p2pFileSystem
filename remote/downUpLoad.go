@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/logger"
+	"github.com/CRVV/p2pFileSystem/ndp"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"github.com/CRVV/p2pFileSystem/transfer"
 	"os"
@@ -37,8 +38,14 @@ func DownloadFile(hash string) error {
 	requestMessageChan := make(chan *FBRMessage, settings.MaxDownloadThreads*2)
 
 	ownerNum := 0
-	for i := 0; i < settings.MaxDownloadThreads; i++ {
-		go downloadFileBlock(tempFile, owners[ownerNum], requestMessageChan, completeBlockNumChan)
+	threadsForEachOwner := settings.MaxDownloadThreads / len(owners)
+	if threadsForEachOwner == 0 {
+		threadsForEachOwner = 1
+	}
+	for _, owner := range owners {
+		for i := 0; i < threadsForEachOwner; i++ {
+			go downloadFileBlock(tempFile, owner, requestMessageChan, completeBlockNumChan)
+		}
 		ownerNum++
 		if ownerNum == len(owners) {
 			ownerNum = 0
@@ -61,7 +68,9 @@ func DownloadFile(hash string) error {
 		blockComplete := <-completeBlockNumChan
 		if blockComplete[1] < 0 {
 			logger.Info(fmt.Sprintf("block %d downloading failed. add it to queue", blockComplete[0]))
-			requestMessageChan <- getMessageForQueue(requestMessage, blockComplete[0], blockCount, lastBlockSize)
+			go func() {
+				requestMessageChan <- getMessageForQueue(requestMessage, blockComplete[0], blockCount, lastBlockSize)
+			}()
 			continue
 		}
 		logger.Info(fmt.Sprintf("block %d complete", blockComplete[0]))
@@ -101,7 +110,8 @@ func getBlockCountAndLastBlockSize(size int64) (blockCount int32, lastBlockSize 
 func downloadFileBlock(tempFile *os.File, destinationName string, requestMessageChan chan *FBRMessage, completeBlockNumChan chan [2]int32) {
 	for {
 		requestMessage := <-requestMessageChan
-		if requestMessage == nil {
+		_, err := ndp.GetPeerAddr(destinationName)
+		if requestMessage == nil || err != nil {
 			logger.Info(fmt.Sprintf("thread for download from %s down", destinationName))
 			break
 		}
