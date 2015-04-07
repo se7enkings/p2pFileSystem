@@ -62,19 +62,23 @@ func onMissingPeer(peer Peer) {
 	peersChangeNotice <- PeerListNotice{NoticeType: PeerMissingNotice, PeerName: peer.Username}
 }
 func onReceiveNeighborSolicitation(peer Peer) {
-	logger.Info(fmt.Sprintf("receive ndp message from %s", peer.Addr))
+	logger.Info(fmt.Sprintf("receive ndp message from %s at %s", peer.Username, peer.Addr))
 	if peer.Username == settings.GetSettings().GetUsername() {
 		logger.Info("found a peer which have the same username. kick it out!")
 		transfer.SendTcpMessage(&IUMessage{peer.Addr})
 	} else {
 		peerList.RLock()
+		logger.Info("check if this peer exist")
 		_, ok := peerList.M[peer.Username]
 		peerList.RUnlock()
 		if !ok {
+			logger.Info("not exist")
 			peerList.Lock()
+			logger.Info("add to list")
 			peerList.M[peer.Username] = peer
 			peerList.Unlock()
 		}
+		logger.Info("send echo message")
 		sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
 		time.Sleep(time.Millisecond * 100)
 		if !ok {
@@ -116,7 +120,7 @@ func doNeighborDiscovery() {
 	}
 	peerListTemp.Lock()
 	peerList.Lock()
-	peerList = peerListTemp
+	peerList.M = peerListTemp.M
 	peerListTemp.M = make(map[string]Peer)
 	peerList.Unlock()
 	peerListTemp.Unlock()
