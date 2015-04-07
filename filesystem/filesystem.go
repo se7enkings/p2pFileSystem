@@ -21,7 +21,20 @@ func RefreshLocalFile() {
 	fileList.N = generateFileList()
 	fileList.Unlock()
 }
-func GetRemoteFile(hash string) (name string, path string, size int64, owners []string, err error) {
+func RefreshRemoteFile(clients map[string]Filesystem) {
+	filesystemRemote.Lock()
+	filesystemRemote.M = make(map[string]*File)
+	for username, fs := range clients {
+		appendFilesystem(filesystemRemote, fs, username)
+	}
+	filesystemRemote.Unlock()
+
+	fileList.Lock()
+	fileList.N = generateFileList()
+	fileList.Unlock()
+}
+
+func GetRemoteFileInfo(hash string) (name string, path string, size int64, owners []string, err error) {
 	filesystemRemote.RLock()
 	defer filesystemRemote.RUnlock()
 	file, ok := filesystemRemote.M[hash]
@@ -37,7 +50,7 @@ func GetRemoteFile(hash string) (name string, path string, size int64, owners []
 	}
 	return
 }
-func GetLocalFile(hash string) (name string, path string, size int64, owners []string, err error) {
+func GetLocalFileInfo(hash string) (name string, path string, size int64, owners []string, err error) {
 	filesystemLocal.RLock()
 	defer filesystemLocal.RUnlock()
 	file, ok := filesystemLocal.M[hash]
@@ -53,17 +66,7 @@ func GetLocalFile(hash string) (name string, path string, size int64, owners []s
 	}
 	return
 }
-func RefreshRemoteFile(clients map[string]Filesystem) {
-	filesystemRemote.Lock()
-	filesystemRemote.M = make(map[string]*File)
-	for username, fs := range clients {
-		appendFilesystem(filesystemRemote, fs, username)
-	}
-	filesystemRemote.Unlock()
-	fileList.Lock()
-	fileList.N = generateFileList()
-	fileList.Unlock()
-}
+
 func GetLocalFilesystemForSend() *Filesystem {
 	return &filesystemLocal
 }

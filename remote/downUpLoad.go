@@ -10,7 +10,7 @@ import (
 )
 
 func DownloadFile(hash string) error {
-	name, path, size, owners, err := filesystem.GetRemoteFile(hash)
+	name, path, size, owners, err := filesystem.GetRemoteFileInfo(hash)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func downloadFileBlock(tempFile *os.File, destinationName string, requestMessage
 		if err != nil {
 			logger.Warning(err)
 			completeBlockNumChan <- [2]int32{requestMessage.BlockNum, -1}
-			return
+			continue
 		}
 		offset := int64(requestMessage.BlockNum) * settings.FileBlockSize
 		_, err = tempFile.WriteAt(fileData, offset)
@@ -119,14 +119,14 @@ func downloadFileBlock(tempFile *os.File, destinationName string, requestMessage
 		if err != nil {
 			logger.Warning(err)
 			completeBlockNumChan <- [2]int32{requestMessage.BlockNum, -1}
-			return
+			continue
 		}
 		completeBlockNumChan <- [2]int32{requestMessage.BlockNum, 0}
 		logger.Info(fmt.Sprintf("download block %d complete", requestMessage.BlockNum))
 	}
 }
 func onRequestedFileBlock(requestMessage *FBRMessage) []byte {
-	name, path, _, _, err := filesystem.GetLocalFile(requestMessage.FileHash)
+	name, path, _, _, err := filesystem.GetLocalFileInfo(requestMessage.FileHash)
 	if err != nil {
 		logger.Warning("I am requested a file but I do not have it")
 		return nil

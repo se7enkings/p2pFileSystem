@@ -10,7 +10,7 @@ const ModeError = 10
 const ModeWarning = 5
 const ModeInfo = 1
 
-var debugMode int = ModeWarning
+var debugMode int = ModeInfo
 
 func Error(e interface{}) {
 	if e != nil {
