@@ -79,8 +79,12 @@ Loop:
 			case file.AtLocal:
 				fmt.Println("download complete")
 			case !file.AtLocal:
-				remote.DownloadFile(file.FileHash)
-				fmt.Println("Download complete")
+				err := remote.DownloadFile(file.FileHash)
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					fmt.Println("Download complete")
+				}
 			}
 		case "rm":
 			file, ok := currentDir.Children[name]

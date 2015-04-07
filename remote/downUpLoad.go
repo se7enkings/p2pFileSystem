@@ -1,6 +1,7 @@
 package remote
 
 import (
+	"errors"
 	"fmt"
 	"github.com/CRVV/p2pFileSystem/filesystem"
 	"github.com/CRVV/p2pFileSystem/logger"
@@ -38,6 +39,7 @@ func DownloadFile(hash string) error {
 	requestMessageChan := make(chan *FBRMessage, settings.MaxDownloadThreads*2)
 
 	ownerNum := 0
+	threadsRunning := 0
 	threadsForEachOwner := settings.MaxDownloadThreads / len(owners)
 	if threadsForEachOwner == 0 {
 		threadsForEachOwner = 1
@@ -45,6 +47,7 @@ func DownloadFile(hash string) error {
 	for _, owner := range owners {
 		for i := 0; i < threadsForEachOwner; i++ {
 			go downloadFileBlock(tempFile, owner, requestMessageChan, completeBlockNumChan)
+			threadsRunning++
 		}
 		ownerNum++
 		if ownerNum == len(owners) {
@@ -65,27 +68,35 @@ func DownloadFile(hash string) error {
 	}()
 
 	for len(toBeCompletedBlocks) != 0 {
+		if threadsRunning == 0 {
+			tempFile.Close()
+			return errors.New("download failed")
+		}
 		blockComplete := <-completeBlockNumChan
 		if blockComplete[1] < 0 {
 			logger.Info(fmt.Sprintf("block %d downloading failed. add it to queue", blockComplete[0]))
 			go func() {
 				requestMessageChan <- getMessageForQueue(requestMessage, blockComplete[0], blockCount, lastBlockSize)
 			}()
+			if blockComplete[1] == -2 {
+				threadsRunning--
+			}
 			continue
 		}
 		logger.Info(fmt.Sprintf("block %d complete", blockComplete[0]))
 		delete(toBeCompletedBlocks, blockComplete[0])
 	}
-	for i := 0; i < settings.MaxDownloadThreads; i++ {
+	for i := 0; i < threadsRunning; i++ {
 		requestMessageChan <- nil
 	}
 
-	//	tempFile.Sync()
 	tempFile.Close()
 	os.MkdirAll(settings.GetSettings().GetSharePath()+path, 0774)
 	err = os.Rename(settings.GetSettings().GetSharePath()+"/.temp/"+hash, settings.GetSettings().GetSharePath()+path+"/"+name)
-	logger.Warning(err)
-
+	if err != nil {
+		logger.Warning(err)
+		return err
+	}
 	filesystem.RefreshLocalFile()
 	return nil
 }
@@ -111,8 +122,12 @@ func downloadFileBlock(tempFile *os.File, destinationName string, requestMessage
 	for {
 		requestMessage := <-requestMessageChan
 		_, err := ndp.GetPeerAddr(destinationName)
-		if requestMessage == nil || err != nil {
+		if requestMessage == nil {
 			logger.Info(fmt.Sprintf("thread for download from %s down", destinationName))
+			break
+		}
+		if err != nil {
+			completeBlockNumChan <- [2]int32{requestMessage.BlockNum, -2}
 			break
 		}
 		logger.Info(fmt.Sprintf("start to download block %d", requestMessage.BlockNum))
@@ -120,8 +135,8 @@ func downloadFileBlock(tempFile *os.File, destinationName string, requestMessage
 		fileData, err := transfer.TcpConnectionForReceiveFile(requestMessage)
 		if err != nil {
 			logger.Warning(err)
-			completeBlockNumChan <- [2]int32{requestMessage.BlockNum, -1}
-			continue
+			completeBlockNumChan <- [2]int32{requestMessage.BlockNum, -2}
+			break
 		}
 		offset := int64(requestMessage.BlockNum) * settings.FileBlockSize
 		_, err = tempFile.WriteAt(fileData, offset)
@@ -146,6 +161,7 @@ func onRequestedFileBlock(requestMessage *FBRMessage) []byte {
 		logger.Warning(err)
 		return nil
 	}
+	defer f.Close()
 	if requestMessage.BlockSize > settings.FileBlockSize {
 		logger.Warning(fmt.Sprintf("I am requested a too big block and its size is %d bytes", requestMessage.BlockSize))
 		return nil
