@@ -19,12 +19,11 @@ func OnExit() {
 	sendNDMessage(settings.GoodByeProtocol, settings.BroadcastAddress)
 }
 func StartNeighborDiscoveryServer() {
-	conn, err := net.ListenUDP("udp4", &net.UDPAddr{
-		IP:   net.IPv4zero,
-		Port: 1540})
-	if err != nil {
-		logger.Error(err)
-	}
+	udpAddr, err := net.ResolveUDPAddr("udp4", settings.NeighborDiscoveryPort)
+	logger.Error(err)
+	conn, err := net.ListenUDP("udp4", udpAddr)
+
+    logger.Error(err)
 	defer conn.Close()
 	for {
 		buff := make([]byte, settings.NeighborDiscoveryMessageBufferSize)
