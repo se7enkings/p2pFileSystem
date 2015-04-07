@@ -56,9 +56,7 @@ func StartNeighborDiscoveryServer() {
 }
 func onMissingPeer(peer Peer) {
 	logger.Info(fmt.Sprintf("receive goodbye from %s", peer.Addr))
-	peerList.Lock()
-	delete(peerList.M, peer.Username)
-	peerList.Unlock()
+	peerList.Delete(peer.Username)
 	peersChangeNotice <- PeerListNotice{NoticeType: PeerMissingNotice, PeerName: peer.Username}
 }
 func onReceiveNeighborSolicitation(peer Peer) {
@@ -67,13 +65,9 @@ func onReceiveNeighborSolicitation(peer Peer) {
 		logger.Info("found a peer which have the same username. kick it out!")
 		transfer.SendTcpMessage(&IUMessage{peer.Addr})
 	} else {
-		peerList.RLock()
-		_, ok := peerList.M[peer.Username]
-		peerList.RUnlock()
+		ok := peerList.Exist(peer.Username)
 		if !ok {
-			peerList.Lock()
-			peerList.M[peer.Username] = peer
-			peerList.Unlock()
+			peerList.Add(peer)
 		}
 		sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
 		time.Sleep(time.Millisecond * 100)
@@ -84,21 +78,13 @@ func onReceiveNeighborSolicitation(peer Peer) {
 }
 func OnReceiveNeighborSolicitationEcho(peer Peer) {
 	logger.Info(fmt.Sprintf("receive ndp echo from %s", peer.Addr))
-	peerList.RLock()
-	_, ok := peerList.M[peer.Username]
-	peerList.RUnlock()
+	ok := peerList.Exist(peer.Username)
 	if !ok {
-		peerList.Lock()
-		peerList.M[peer.Username] = peer
-		peerList.Unlock()
+		peerList.Add(peer)
 	}
-	peerListTemp.RLock()
-	_, ok = peerListTemp.M[peer.Username]
-	peerListTemp.RUnlock()
+	ok = peerListTemp.Exist(peer.Username)
 	if !ok {
-		peerListTemp.Lock()
-		peerListTemp.M[peer.Username] = peer
-		peerListTemp.Unlock()
+		peerListTemp.Add(peer)
 	}
 }
 func NeighborDiscovery(notice chan PeerListNotice) {
@@ -114,12 +100,9 @@ func doNeighborDiscovery() {
 		sendNDMessage(settings.NeighborDiscoveryProtocol, settings.BroadcastAddress)
 		time.Sleep(time.Second)
 	}
-	peerListTemp.Lock()
-	peerList.Lock()
-	peerList.M = peerListTemp.M
-	peerListTemp.M = make(map[string]Peer)
-	peerList.Unlock()
-	peerListTemp.Unlock()
+	mapTemp := peerListTemp.GetMap()
+	peerList.ReplaceByNewMap(mapTemp)
+	peerListTemp.ReplaceByNewMap(make(map[string]Peer))
 	peersChangeNotice <- PeerListNotice{NoticeType: ReloadPeerListNotice}
 }
 func sendNDMessage(messageType string, target string) {

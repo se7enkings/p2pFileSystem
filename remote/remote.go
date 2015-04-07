@@ -18,16 +18,15 @@ func MaintainClientList() {
 		switch notice := <-changeNotice; notice.NoticeType {
 		case ndp.ReloadPeerListNotice:
 			newPeerList := ndp.GetPeerList()
-			newPeerList.RLock()
 			clients.RLock()
 			for name, _ := range clients.M {
-				_, ok := newPeerList.M[name]
+				ok := newPeerList.Exist(name)
 				if !ok {
 					logger.Info(fmt.Sprintf("miss client %s", name))
 					go onClientMissing(name)
 				}
 			}
-			for name, _ := range newPeerList.M {
+			for name, _ := range newPeerList.GetMap() {
 				_, ok := clients.M[name]
 				if !ok {
 					logger.Info("found client " + name + " but do not have its file list, request it")
@@ -35,7 +34,6 @@ func MaintainClientList() {
 				}
 			}
 			clients.RUnlock()
-			newPeerList.RUnlock()
 		case ndp.PeerMissingNotice:
 			onClientMissing(notice.PeerName)
 		case ndp.NewPeerNotice:

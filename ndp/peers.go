@@ -34,6 +34,38 @@ type peerTable struct {
 	M map[string]Peer //key: Username
 	sync.RWMutex
 }
+
+func (t *peerTable) Exist(name string) bool {
+	t.RLock()
+	_, ok := t.M[name]
+	t.RUnlock()
+	return ok
+}
+func (t *peerTable) GetMap() map[string]Peer {
+	t.RLock()
+	m := make(map[string]Peer)
+	for name, peer := range t.M {
+		m[name] = peer
+	}
+	t.RUnlock()
+	return m
+}
+func (t *peerTable) ReplaceByNewMap(m map[string]Peer) {
+	t.Lock()
+	t.M = m
+	t.Unlock()
+}
+func (t *peerTable) Delete(name string) {
+	t.Lock()
+	defer t.Unlock()
+	delete(t.M, name)
+}
+func (t *peerTable) Add(peer Peer) {
+	t.Lock()
+	defer t.Unlock()
+	t.M[peer.Username] = peer
+}
+
 type Peer struct {
 	Username string
 	Addr     string `json:"-"`
