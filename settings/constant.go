@@ -9,8 +9,8 @@ const NeighborDiscoveryMessageBufferSize = 1024
 const FileBlockSize = 1024 * 1024 // 1 MB
 
 const BroadcastAddress = "255.255.255.255"
-const CommunicationPort = ":1539"
-const NeighborDiscoveryPort = ":1540"
+const CommunicationPort = ":1239"
+const NeighborDiscoveryPort = ":1240"
 
 const FileSystemListProtocol = "fslp"
 const FileListRequestProtocol = "fsrp"

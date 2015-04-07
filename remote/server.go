@@ -12,7 +12,7 @@ import (
 )
 
 func StartFilesystemServer() {
-	listener, err := net.Listen("tcp", settings.CommunicationPort)
+	listener, err := net.Listen("tcp4", settings.CommunicationPort)
 	if err != nil {
 		logger.Error(err)
 	}
