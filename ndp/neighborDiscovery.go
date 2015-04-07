@@ -68,17 +68,13 @@ func onReceiveNeighborSolicitation(peer Peer) {
 		transfer.SendTcpMessage(&IUMessage{peer.Addr})
 	} else {
 		peerList.RLock()
-		logger.Info("check if this peer exist")
 		_, ok := peerList.M[peer.Username]
 		peerList.RUnlock()
 		if !ok {
-			logger.Info("not exist")
 			peerList.Lock()
-			logger.Info("add to list")
 			peerList.M[peer.Username] = peer
 			peerList.Unlock()
 		}
-		logger.Info("send echo message")
 		sendNDMessage(settings.NeighborDiscoveryProtocolEcho, peer.Username)
 		time.Sleep(time.Millisecond * 100)
 		if !ok {

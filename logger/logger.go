@@ -6,7 +6,11 @@ import (
 	"runtime"
 )
 
-var debugMode bool = true
+const ModeError = 10
+const ModeWarning = 5
+const ModeInfo = 1
+
+var debugMode int = ModeWarning
 
 func Error(e interface{}) {
 	if e != nil {
@@ -20,7 +24,7 @@ func Error(e interface{}) {
 	}
 }
 func Warning(w interface{}) {
-	if w != nil && debugMode {
+	if w != nil && debugMode <= ModeWarning {
 		fmt.Print("Warning: ")
 		pc, _, _, ok := runtime.Caller(1)
 		if ok {
@@ -30,7 +34,7 @@ func Warning(w interface{}) {
 	}
 }
 func Info(i interface{}) {
-	if i != nil && debugMode {
+	if i != nil && debugMode <= ModeInfo {
 		fmt.Printf("Info: ")
 		pc, _, _, ok := runtime.Caller(1)
 		if ok {

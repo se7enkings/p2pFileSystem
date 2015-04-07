@@ -24,7 +24,7 @@ func MaintainClientList() {
 				_, ok := newPeerList.M[name]
 				if !ok {
 					logger.Info(fmt.Sprintf("miss client %s", name))
-					onClientMissing(name)
+					go onClientMissing(name)
 				}
 			}
 			for name, _ := range newPeerList.M {
