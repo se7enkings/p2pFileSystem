@@ -23,7 +23,7 @@ func StartNeighborDiscoveryServer() {
 	logger.Error(err)
 	conn, err := net.ListenUDP("udp4", udpAddr)
 
-    logger.Error(err)
+	logger.Error(err)
 	defer conn.Close()
 	for {
 		buff := make([]byte, settings.NeighborDiscoveryMessageBufferSize)

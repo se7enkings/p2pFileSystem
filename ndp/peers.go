@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"math/rand"
 	"sync"
@@ -22,7 +23,7 @@ func GetPeerAddr(name string) (string, error) {
 	if ok {
 		return peerList.M[name].Addr, nil
 	}
-	return "", errors.New("requested address of an unknown peer")
+	return "", errors.New(fmt.Sprintf("requested address of an unknown peer %s", name))
 }
 func GetPeerFromJson(message []byte) (Peer, error) {
 	peer, err := json2peer(message)
