@@ -52,6 +52,9 @@ func readFolder(sharedPath string, currentPath string, outputChan chan LocalFile
 		return err
 	}
 	for _, v := range fileInfos {
+        if v.Mode() == os.ModeSymlink {
+            continue
+        }
 		if v.IsDir() {
 			if settings.GetSettings().IsIgnored(v.Name()) {
 				continue

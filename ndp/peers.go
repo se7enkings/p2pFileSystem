@@ -13,8 +13,8 @@ import (
 
 var myself Peer
 
-func GetPeerList() *peerTable {
-	return &peerList
+func GetPeerList() map[string]Peer {
+    return peerList.GetMap()
 }
 func GetPeerAddr(name string) (string, error) {
 	peerList.RLock()

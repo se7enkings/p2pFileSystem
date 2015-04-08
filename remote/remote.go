@@ -15,30 +15,30 @@ func MaintainClientList() {
 	changeNotice := make(chan ndp.PeerListNotice)
 	go ndp.NeighborDiscovery(changeNotice)
 	for {
-		switch notice := <-changeNotice; notice.NoticeType {
+        notice := <-changeNotice;
+        logger.Info(fmt.Sprintf("start handle a client list maintain loop %d", notice.NoticeType))
+		switch  notice.NoticeType {
 		case ndp.ReloadPeerListNotice:
 			newPeerList := ndp.GetPeerList()
-			clients.RLock()
-			for name, _ := range clients.M {
-				ok := newPeerList.Exist(name)
+			for _, name := range clients.GetNameList() {
+				_, ok := newPeerList[name]
 				if !ok {
 					logger.Info(fmt.Sprintf("miss client %s", name))
 					go onClientMissing(name)
 				}
 			}
-			for name, _ := range newPeerList.GetMap() {
-				_, ok := clients.M[name]
-				if !ok {
+			for name, _ := range newPeerList {
+				if !clients.Exist(name) {
 					logger.Info("found client " + name + " but do not have its file list, request it")
 					onDiscoverNewClient(name)
 				}
 			}
-			clients.RUnlock()
 		case ndp.PeerMissingNotice:
 			onClientMissing(notice.PeerName)
 		case ndp.NewPeerNotice:
 			onDiscoverNewClient(notice.PeerName)
 		}
+        logger.Info(fmt.Sprintf("complete handle a client list maintain loop %d", notice.NoticeType))
 	}
 }
 func onReceiveFilesystem(filesystemMessage []byte) {
@@ -47,9 +47,7 @@ func onReceiveFilesystem(filesystemMessage []byte) {
 		logger.Warning(err)
 	}
 	logger.Info("receive file list from " + client.Username)
-	clients.Lock()
-	clients.M[client.Username] = client.FileSystem
-	clients.Unlock()
+    clients.AddFilesystem(client.Username, client.FileSystem)
 	refreshFilesystem()
 }
 func onRequestedFilesystem(name string) {
@@ -58,9 +56,7 @@ func onRequestedFilesystem(name string) {
 }
 func onClientMissing(name string) {
 	logger.Info("missing client " + name)
-	clients.Lock()
-	delete(clients.M, name)
-	clients.Unlock()
+    clients.DeleteFilesystem(name)
 	refreshFilesystem()
 }
 func onDiscoverNewClient(name string) {
