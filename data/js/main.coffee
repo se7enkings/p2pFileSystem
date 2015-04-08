@@ -1,5 +1,6 @@
 FileListRequestProtocol = "fsrp"
-webSocket = new WebSocket("ws://localhost:1241/ws")
+url = "ws://"+window.location.host+"/ws"
+webSocket = new WebSocket(url)
 fileList = null
 paths = new Array()
 

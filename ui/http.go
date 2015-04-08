@@ -6,13 +6,22 @@ import (
 	"github.com/CRVV/p2pFileSystem/logger"
 	"github.com/CRVV/p2pFileSystem/settings"
 	"net/http"
+    "strings"
+    "github.com/CRVV/p2pFileSystem/data"
+    "bytes"
+    "time"
+    "os/exec"
+    "runtime"
 )
 
 func StartHttpServer() {
-	http.Handle("/", http.FileServer(http.Dir("ui/")))
+	http.Handle("/", httpHandler{})
 	http.Handle("/ws", websocket.Handler(socketHandler))
-	err := http.ListenAndServe(settings.HttpPort, nil)
-	logger.Error(err)
+    go func() {
+        err := http.ListenAndServe(settings.HttpPort, nil)
+        logger.Error(err)
+    }()
+    startBrowser("http://localhost" + settings.HttpPort)
 }
 func socketHandler(ws *websocket.Conn) {
 	buff := make([]byte, settings.MessageBufferSize)
@@ -36,4 +45,36 @@ func fileListChangeListener(ws *websocket.Conn, noticeChan chan int) {
 		<-noticeChan
 		ws.Write(filesystem.GetFileListJson(noticeChan))
 	}
+}
+
+type httpHandler struct {}
+func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    path := r.URL.Path
+    for strings.HasPrefix(path, "/") {
+        path = path[1:]
+    }
+    if path == "" {
+        path = "index.html"
+    }
+    logger.Info(path)
+    data, err := data.Asset(path)
+    if err != nil {
+        http.NotFound(w, r)
+        return
+    }
+    http.ServeContent(w, r, path, time.Now(), bytes.NewReader(data))
+}
+
+func startBrowser(url string) bool {
+    var args []string
+    switch runtime.GOOS {
+        case "darwin":
+        args = []string{"open"}
+        case "windows":
+        args = []string{"cmd", "/c", "start"}
+        default:
+        args = []string{"xdg-open"}
+    }
+    cmd := exec.Command(args[0], append(args[1:], url)...)
+    return cmd.Start() == nil
 }

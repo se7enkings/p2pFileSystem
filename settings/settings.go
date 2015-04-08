@@ -14,7 +14,7 @@ type Settings struct {
 	Username  string
 	GroupName string
 	SharePath string
-	Ignore    map[string]int
+	Ignore    map[string]bool
 }
 
 func GetSettings() *Settings {
@@ -22,7 +22,7 @@ func GetSettings() *Settings {
 	if settings.Username == "" {
 		configFile, err := ioutil.ReadFile("config.json")
 		if err != nil {
-			settings = Settings{"crvv", "Group", "test/ShareFolder", make(map[string]int)}
+			settings = Settings{"crvv", "Group", ".", make(map[string]bool)}
 			settings.saveSettings()
 		} else {
 			settings = Settings{}
@@ -70,7 +70,7 @@ func (s *Settings) GetIgnoreList() []string {
 }
 func (s *Settings) AddIgnore(name string) {
 	mutex.Lock()
-	s.Ignore[name] = 1
+	s.Ignore[name] = true
 	s.saveSettings()
 	mutex.Unlock()
 }

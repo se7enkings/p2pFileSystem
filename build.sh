@@ -9,26 +9,23 @@ BUILD_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 # Derive the project name from the directory
 PROJECT="$(basename $BUILD_DIR)"
 
-# Setup the environment for the build
-GOPATH=$BUILD_DIR:$GOPATH
- 
 cd $BUILD_DIR
 cd data
 
 # Prepare files
 if [ "$1" = "debug" ]; then
     coffee -b -c -m js/*.coffee
-    go-bindata -debug -pkg="data" -o data.go -ignore=\.\*\\.go  ./...
+    $GOPATH/bin/go-bindata -debug -pkg="data" -o data.go -ignore=\.\*\\.go  ./...
 else
     coffee -b -c js/*.coffee
-    go-bindata -pkg="data" -o data.go -ignore=\.\*\\.go\|\.\*\\.coffee  ./...
+    $GOPATH/bin/go-bindata -pkg="data" -o data.go -ignore=\.\*\\.go\|\.\*\\.coffee  ./...
 fi
 
 cd $BUILD_DIR
 
 # Build the project
 mkdir -p bin
-go build -o $PROJECT 
+go build
  
 EXIT_STATUS=$?
  
