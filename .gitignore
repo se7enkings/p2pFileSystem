@@ -33,6 +33,3 @@ config.json
 # temp file
 test/ShareFolder
 
-# JavaScript
-ui/js/main.js
-ui/js/main.js.map
