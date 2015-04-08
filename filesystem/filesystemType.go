@@ -12,7 +12,7 @@ type Filesystem struct {
 	sync.RWMutex `json:"-"`
 }
 type FileList struct { // file list for ui
-	N *Node
+	N *Node `json:"fsrp"`
 	sync.RWMutex
 }
 

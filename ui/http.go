@@ -19,13 +19,16 @@ func socketHandler(ws *websocket.Conn) {
 	messageSize, err := ws.Read(buff)
 	logger.Warning(err)
 	message := string(buff[:messageSize])
-    logger.Info(message)
+	logger.Info(message)
 	switch message {
 	case settings.FileListRequestProtocol:
-        logger.Info("requested file list by web browser")
-        fileListJson := filesystem.GetFileListJson()
-        logger.Info(string(fileListJson))
-		ws.Write(fileListJson)
-
+		logger.Info("requested file list by web browser")
+		noticeChan := make(chan int)
+		go fileListChangeListener(ws, noticeChan)
+		ws.Write(filesystem.GetFileListJson(noticeChan))
 	}
+}
+func fileListChangeListener(ws *websocket.Conn, noticeChan chan int) {
+	<-noticeChan
+	ws.Write(filesystem.GetFileListJson(noticeChan))
 }
