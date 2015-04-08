@@ -27,12 +27,12 @@ func socketHandler(ws *websocket.Conn) {
 		go fileListChangeListener(ws, noticeChan)
 		ws.Write(filesystem.GetFileListJson(noticeChan))
 	}
-    a := make(chan int)
-    <- a
+	a := make(chan int)
+	<-a
 }
 func fileListChangeListener(ws *websocket.Conn, noticeChan chan int) {
-    for {
-        <-noticeChan
-        ws.Write(filesystem.GetFileListJson(noticeChan))
-    }
+	for {
+		<-noticeChan
+		ws.Write(filesystem.GetFileListJson(noticeChan))
+	}
 }

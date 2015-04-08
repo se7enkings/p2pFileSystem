@@ -17,30 +17,31 @@ type ClientList struct {
 	M map[string]filesystem.Filesystem
 	sync.RWMutex
 }
+
 func (c *ClientList) GetNameList() []string {
-    c.RLock()
-    defer c.RUnlock()
-    var list []string
-    for name, _ := range c.M {
-        list = append(list, name)
-    }
-    return list
+	c.RLock()
+	defer c.RUnlock()
+	var list []string
+	for name, _ := range c.M {
+		list = append(list, name)
+	}
+	return list
 }
 func (c *ClientList) Exist(name string) bool {
-    c.RLock()
-    defer c.RUnlock()
-    _, ok := c.M[name]
-    return ok
+	c.RLock()
+	defer c.RUnlock()
+	_, ok := c.M[name]
+	return ok
 }
 func (c *ClientList) AddFilesystem(name string, fs filesystem.Filesystem) {
-    c.Lock()
-    defer c.Unlock()
-    c.M[name] = fs
+	c.Lock()
+	defer c.Unlock()
+	c.M[name] = fs
 }
 func (c *ClientList) DeleteFilesystem(name string) {
-    c.Lock()
-    defer c.Unlock()
-    delete(c.M, name)
+	c.Lock()
+	defer c.Unlock()
+	delete(c.M, name)
 }
 
 type FSMessage struct {
