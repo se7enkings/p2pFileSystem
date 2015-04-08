@@ -24,6 +24,7 @@ func socketHandler(ws *websocket.Conn) {
 	case settings.FileListRequestProtocol:
 		logger.Info("requested file list by web browser")
 		noticeChan := make(chan int)
+		//TODO: this will go a goroutine every time
 		go fileListChangeListener(ws, noticeChan)
 		ws.Write(filesystem.GetFileListJson(noticeChan))
 	}

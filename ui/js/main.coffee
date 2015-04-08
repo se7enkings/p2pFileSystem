@@ -23,6 +23,7 @@ updateTable = () ->
             list = list["Children"][dir]
         else
             list = fileList
+            paths = new Array()
             break
     table = document.getElementById("fileList")
     for i in [1...table.rows.length]

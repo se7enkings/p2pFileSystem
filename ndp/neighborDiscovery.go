@@ -100,6 +100,13 @@ func doNeighborDiscovery() {
 		sendNDMessage(settings.NeighborDiscoveryProtocol, settings.BroadcastAddress)
 		time.Sleep(time.Second)
 	}
+	for name, peer := range peerList.GetMap() {
+		message := Message{settings.NeighborDiscoveryProtocol, name}
+		err := transfer.SendTcpMessage(&message)
+		if err == nil {
+			peerListTemp.Add(peer)
+		}
+	}
 	mapTemp := peerListTemp.GetMap()
 	peerList.ReplaceByNewMap(mapTemp)
 	peerListTemp.ReplaceByNewMap(make(map[string]Peer))
