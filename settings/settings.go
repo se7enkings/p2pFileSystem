@@ -10,6 +10,8 @@ import (
 var settings Settings
 var mutex sync.Mutex = sync.Mutex{}
 
+var configFileExist = true
+
 type Settings struct {
 	Username  string
 	GroupName string
@@ -23,7 +25,7 @@ func GetSettings() *Settings {
 		configFile, err := ioutil.ReadFile("config.json")
 		if err != nil {
 			settings = Settings{"crvv", "Group", ".", make(map[string]bool)}
-			settings.saveSettings()
+			configFileExist = false
 		} else {
 			settings = Settings{}
 			err = json.Unmarshal(configFile, &settings)
@@ -34,6 +36,9 @@ func GetSettings() *Settings {
 	return &settings
 }
 func (s *Settings) saveSettings() {
+	if !configFileExist {
+		return
+	}
 	configFile, err := json.Marshal(s)
 	logger.Warning(err)
 	ioutil.WriteFile("config.json", configFile, 0644)
