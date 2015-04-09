@@ -19,10 +19,11 @@ _cgo_export.*
 
 _testmain.go
 
+
 *.exe
 *.test
 *.prof
-p2pFileSystem
+p2pFileSystem*
 
 # JetBrains
 .idea
